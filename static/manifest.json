@@ -1,0 +1,20 @@
+{
+  "name": "SICAF Campo - Insurrecto Coffee",
+  "short_name": "SICAF Móvil",
+  "start_url": "/mobile.html",
+  "display": "standalone",
+  "background_color": "#143522",
+  "theme_color": "#143522",
+  "icons": [
+    {
+      "src": "/img/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/img/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

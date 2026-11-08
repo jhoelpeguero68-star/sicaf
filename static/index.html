@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SICAF — Insurrecto Café Especial</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1b4332">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --brand-green-dark: #143522;
+      --brand-green-main: #1e5132;
+      --brand-green-light: #2d6a4f;
+      --brand-cream-bg: #f5efe6;
+      --brand-card-bg: #ffffff;
+      --brand-brown: #8b5a2b;
+      --brand-text: #212529;
+    }
+    body {
+      background-color: var(--brand-cream-bg);
+      color: var(--brand-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .bg-sicaf-sidebar { background-color: var(--brand-green-dark); }
+    .bg-sicaf-card { background-color: #fcfbf9; }
+    .border-sicaf { border-color: #e5ded5; }
+    .text-sicaf-green { color: var(--brand-green-main); }
+    .badge-sicaf-brown { background-color: #8b5a2b; color: white; }
+    .badge-sicaf-green { background-color: #1e5132; color: white; }
+  </style>
+</head>
+<body class="min-h-screen flex">
+
+  <!-- SIDEBAR LATERAL (ESTRUCTURA DEL PANEL OFICIAL) -->
+  <aside class="w-64 bg-sicaf-sidebar text-white flex flex-col justify-between shrink-0 shadow-xl min-h-screen">
+    <div>
+      <!-- LOGO Y TÍTULO -->
+      <div class="p-5 flex flex-col items-center border-b border-green-900/50">
+        <img src="/img/logo.jpg" alt="Logo Insurrecto" class="w-24 h-24 rounded-full border-2 border-amber-600/60 shadow-lg object-cover mb-2">
+        <h1 class="text-xl font-bold tracking-wider text-amber-100">SICAF</h1>
+        <p class="text-[11px] text-green-200 text-center font-light leading-tight mt-1">
+          Sistema Integral de Control<br>y Administración del Café
+        </p>
+      </div>
+
+      <!-- NAVEGACIÓN PRINCIPAL -->
+      <nav class="mt-4 px-3 space-y-1">
+        <a href="#dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-800/80 text-white font-medium text-sm transition">
+          <i class="fa-solid fa-house w-5 text-center text-amber-300"></i> Inicio
+        </a>
+        <a href="#campos" onclick="showSection('campos')" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-100 hover:bg-emerald-900/60 font-medium text-sm transition">
+          <i class="fa-solid fa-mountain w-5 text-center text-green-300"></i> Fincas y Campos (25)
+        </a>
+        <a href="/mobile.html" target="_blank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-100 hover:bg-emerald-900/60 font-medium text-sm transition">
+          <i class="fa-solid fa-mobile-screen w-5 text-center text-amber-400"></i> App Móvil Campo <span class="text-[10px] bg-amber-600 px-1.5 py-0.5 rounded text-white ml-auto">PWA</span>
+        </a>
+        <a href="#beneficio" onclick="openRecepcionModal()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-100 hover:bg-emerald-900/60 font-medium text-sm transition">
+          <i class="fa-solid fa-seedling w-5 text-center text-green-300"></i> Beneficio & Recepción
+        </a>
+        <a href="#nomina" onclick="openNominaModal()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-100 hover:bg-emerald-900/60 font-medium text-sm transition">
+          <i class="fa-solid fa-users-gear w-5 text-center text-green-300"></i> Nómina de Cosecha
+        </a>
+        <a href="#inventario" onclick="openInventarioModal()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-100 hover:bg-emerald-900/60 font-medium text-sm transition">
+          <i class="fa-solid fa-boxes-stacked w-5 text-center text-green-300"></i> Inventario & Almacenes
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-100/70 hover:bg-emerald-900/60 font-medium text-sm transition">
+          <i class="fa-solid fa-sun w-5 text-center text-green-300"></i> Secado (Baní)
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-100/70 hover:bg-emerald-900/60 font-medium text-sm transition">
+          <i class="fa-solid fa-fire-burner w-5 text-center text-green-300"></i> Tostaduría
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-100/70 hover:bg-emerald-900/60 font-medium text-sm transition">
+          <i class="fa-solid fa-box-open w-5 text-center text-green-300"></i> Empaque
+        </a>
+        <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-green-100/70 hover:bg-emerald-900/60 font-medium text-sm transition">
+          <i class="fa-solid fa-chart-column w-5 text-center text-green-300"></i> Reportes
+        </a>
+      </nav>
+    </div>
+
+    <!-- PIE DEL SIDEBAR -->
+    <div class="p-4 border-t border-green-900/50">
+      <div class="flex items-center gap-3 px-2 py-2">
+        <div class="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-xs text-amber-200">
+          AD
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-white">Administrador</p>
+          <p class="text-[10px] text-green-300">Insurrecto Coffee</p>
+        </div>
+      </div>
+      <p class="text-[10px] text-green-400/60 text-center italic mt-3">
+        "Calidad en cada grano, compromiso en cada proceso"
+      </p>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 p-8 overflow-y-auto">
+
+    <!-- TOPBAR -->
+    <header class="flex justify-between items-center mb-6 pb-4 border-b border-sicaf">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">Bienvenido al Sistema SICAF</h2>
+        <p class="text-sm text-gray-600 italic">Gestión Integral de su producción de Café • Myra Café SRL & Insurrecto Coffee</p>
+      </div>
+      <div class="flex items-center gap-4 text-sm text-gray-700 bg-white px-4 py-2 rounded-xl shadow-sm border border-sicaf">
+        <i class="fa-regular fa-calendar text-sicaf-green"></i>
+        <span class="font-medium" id="currentDate">Sábado, 7 de Noviembre de 2026</span>
+        <span class="text-gray-300">|</span>
+        <i class="fa-solid fa-shield-halved text-emerald-600"></i>
+        <span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold">Seguridad Cifrada</span>
+      </div>
+    </header>
+
+    <!-- CARDS DE KPIS PRINCIPALES (CON LAS CORRECCIONES DE LA ESPECIFICACIÓN V2.2) -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+      
+      <!-- Total Cosecha -->
+      <div class="bg-sicaf-card p-5 rounded-2xl shadow-sm border border-sicaf flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cosecha</p>
+          <h3 class="text-3xl font-extrabold text-emerald-900 mt-1" id="kpiTotalCosecha">4,850 kg</h3>
+          <p class="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+            <i class="fa-solid fa-arrow-up"></i> 12% vs semana anterior
+          </p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-leaf"></i>
+        </div>
+      </div>
+
+      <!-- Campos Activos -->
+      <div class="bg-sicaf-card p-5 rounded-2xl shadow-sm border border-sicaf flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Campos Activos</p>
+          <h3 class="text-3xl font-extrabold text-amber-900 mt-1" id="kpiCampos">25</h3>
+          <p class="text-xs text-gray-500 mt-1">Catálogo oficial Anexo A</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-mountain-sun"></i>
+        </div>
+      </div>
+
+      <!-- Registros Validados -->
+      <div class="bg-sicaf-card p-5 rounded-2xl shadow-sm border border-sicaf flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Recepciones Validadas</p>
+          <h3 class="text-3xl font-extrabold text-emerald-800 mt-1" id="kpiValidados">3</h3>
+          <p class="text-xs text-emerald-700 font-medium mt-1">100% Conciliado con campo</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-green-100 text-green-800 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+      </div>
+
+      <!-- % Fruta Inmadura (Muestreo Recepción) - CORRECCIÓN CLAVE V2.2 -->
+      <div class="bg-sicaf-card p-5 rounded-2xl shadow-sm border border-amber-300 flex items-center justify-between relative overflow-hidden">
+        <div class="absolute -right-3 -top-3 w-16 h-16 bg-amber-400/10 rounded-full"></div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <p class="text-xs font-bold text-amber-800 uppercase tracking-wider">% Fruta Inmadura</p>
+            <span class="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.2 rounded font-bold">ALERTA > 5%</span>
+          </div>
+          <h3 class="text-3xl font-extrabold text-amber-900 mt-1" id="kpiInmadura">8.5%</h3>
+          <p class="text-[11px] text-amber-700 font-medium mt-1">Muestreo en Beneficio (Calidad)</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SECCIÓN DE GRÁFICAS Y RESUMEN -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      
+      <!-- Gráfica de Producción por Campo -->
+      <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="text-base font-bold text-gray-800 flex items-center gap-2">
+            <i class="fa-solid fa-chart-simple text-sicaf-green"></i> Producción por Campo (Top 5)
+          </h4>
+          <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-lg font-medium">Este Mes</span>
+        </div>
+        <div class="h-64">
+          <canvas id="chartCampos"></canvas>
+        </div>
+      </div>
+
+      <!-- Resumen de Cosecha & Conversión -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf flex flex-col justify-between">
+        <div>
+          <h4 class="text-base font-bold text-gray-800 flex items-center gap-2 mb-4">
+            <i class="fa-solid fa-seedling text-sicaf-green"></i> Resumen de Cosecha
+          </h4>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+              <span class="text-sm text-gray-600">Kilogramos Cosechados:</span>
+              <span class="font-bold text-gray-900 text-lg">4,850 kg</span>
+            </div>
+            <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+              <span class="text-sm text-gray-600">Rendimiento Pergamino (Est.):</span>
+              <span class="font-bold text-emerald-800">20.2% <span class="text-xs text-gray-400 font-normal">(MEDIDO)</span></span>
+            </div>
+            <div class="flex justify-between items-center pb-2 border-b border-gray-100">
+              <span class="text-sm text-gray-600">Lotes en Beneficio:</span>
+              <span class="font-semibold text-gray-800">3 Lotes</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">Periodo Actual:</span>
+              <span class="text-xs bg-emerald-50 text-emerald-800 px-2.5 py-1 rounded-md font-semibold">01/11/2026 – 07/11/2026</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de Acción Rápida -->
+        <div class="mt-6 pt-4 border-t border-gray-100 flex gap-2">
+          <button onclick="openRecepcionModal()" class="flex-1 bg-sicaf-sidebar hover:bg-emerald-800 text-white text-xs font-semibold py-2.5 px-3 rounded-xl shadow transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-truck-ramp-box"></i> Validar Recepción
+          </button>
+          <a href="/mobile.html" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold py-2.5 px-3 rounded-xl shadow transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-mobile-screen"></i> PWA Móvil
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FILA INFERIOR: FICHA DE LA FINCA (CORREGIDA A RANCHO ARRIBA) Y ÚLTIMOS REGISTROS -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      
+      <!-- Ficha Finca La Peñita (Corregida con San José de Ocoa y Baní para secado) -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
+        <h4 class="text-base font-bold text-gray-800 flex items-center gap-2 mb-3">
+          <i class="fa-solid fa-location-dot text-sicaf-green"></i> Producción por Región / Finca
+        </h4>
+        <div class="rounded-xl overflow-hidden mb-3 border border-gray-200">
+          <img src="/img/panel_ref.jpg" alt="Finca La Peñita" class="w-full h-32 object-cover">
+        </div>
+        <h5 class="text-lg font-bold text-emerald-950">Finca La Peñita</h5>
+        <p class="text-xs text-gray-600 flex items-center gap-1 mt-0.5">
+          <i class="fa-solid fa-mountain text-gray-400"></i> Rancho Arriba, San José de Ocoa (R.D.)
+        </p>
+        <p class="text-xs text-amber-700 flex items-center gap-1 mt-1">
+          <i class="fa-solid fa-sun text-amber-500"></i> Almacén de Secado en Baní, Peravia
+        </p>
+        <div class="mt-4 flex justify-between items-center pt-3 border-t border-gray-100">
+          <div>
+            <p class="text-[11px] text-gray-500">Total Producido</p>
+            <p class="text-xl font-extrabold text-emerald-900">4,850 kg</p>
+          </div>
+          <button onclick="showSection('campos')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-semibold px-3 py-2 rounded-lg transition">
+            Ver 25 Campos →
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de Últimos Registros -->
+      <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
+        <div class="flex justify-between items-center mb-4">
+          <h4 class="text-base font-bold text-gray-800 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-sicaf-green"></i> Últimos Registros de Cosecha
+          </h4>
+          <span class="text-xs text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg font-semibold">Individual por Recolector</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+              <tr>
+                <th class="py-2.5 px-3">Fecha</th>
+                <th class="py-2.5 px-3">Campo</th>
+                <th class="py-2.5 px-3">Recolector</th>
+                <th class="py-2.5 px-3 text-right">Kilogramos</th>
+                <th class="py-2.5 px-3">Modalidad</th>
+                <th class="py-2.5 px-3 text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tablaUltimosRegistros" class="divide-y divide-gray-100">
+              <!-- Cargado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: VALIDAR RECEPCIÓN EN BENEFICIO -->
+  <div id="modalRecepcion" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-truck-ramp-box text-sicaf-green"></i> Validación de Recepción en Beneficio
+        </h3>
+        <button onclick="closeRecepcionModal()" class="text-gray-400 hover:text-gray-600 text-lg">&times;</button>
+      </div>
+
+      <div class="space-y-4 my-4">
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
+          <i class="fa-solid fa-scale-balanced mr-1"></i> <strong>Regla RN-13 / RN-51:</strong> El encargado de beneficio valida los kg finales y realiza el muestreo de fruta inmadura. Traspaso oficial de Myra Café SRL a Insurrecto Coffee sin precio.
+        </div>
+        
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha de Recepción</label>
+          <input type="date" id="recFecha" value="2026-11-07" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Kilogramos Validados en Báscula de Beneficio</label>
+          <input type="number" id="recKgValidados" value="1000" step="0.1" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold text-emerald-900">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">% de Fruta Inmadura (Verde) en Muestreo</label>
+          <input type="number" id="recPctInmadura" value="4.5" step="0.1" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          <p class="text-[11px] text-gray-500 mt-1">Si supera 5.0%, se emitirá una alerta de calidad automática a gerencia.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Observaciones</label>
+          <input type="text" id="recObservaciones" placeholder="Llegó en camión Daihatsu rojo..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-3 border-t border-gray-200">
+        <button onclick="closeRecepcionModal()" class="px-4 py-2 rounded-xl text-gray-600 hover:bg-gray-100 text-sm font-semibold">Cancelar</button>
+        <button onclick="guardarRecepcion()" class="px-5 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-900 text-white text-sm font-semibold shadow">Confirmar y Traspasar Lote</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NÓMINA DE COSECHA -->
+  <div id="modalNomina" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <div>
+          <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <i class="fa-solid fa-users-gear text-sicaf-green"></i> Liquidación Semanal de Recolectores
+          </h3>
+          <p class="text-xs text-gray-500">Tarifa vigente: RD$ 8.00 / kg • Cierre inmutable auditado</p>
+        </div>
+        <button onclick="closeNominaModal()" class="text-gray-400 hover:text-gray-600 text-lg">&times;</button>
+      </div>
+
+      <div class="overflow-x-auto my-4 max-h-96">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-gray-50 text-gray-600 uppercase border-b border-gray-200 sticky top-0">
+            <tr>
+              <th class="py-2.5 px-3">Recolector</th>
+              <th class="py-2.5 px-3">Cuadrilla</th>
+              <th class="py-2.5 px-3 text-right">Kg Cosechados</th>
+              <th class="py-2.5 px-3 text-right">Tarifa</th>
+              <th class="py-2.5 px-3 text-right">Subtotal</th>
+              <th class="py-2.5 px-3 text-right">Neto a Pagar</th>
+            </tr>
+          </thead>
+          <tbody id="tablaNomina" class="divide-y divide-gray-100">
+            <!-- Cargado por JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex justify-between items-center pt-3 border-t border-gray-200">
+        <div>
+          <span class="text-xs text-gray-500">Total a liquidar:</span>
+          <span class="text-lg font-extrabold text-emerald-900 ml-2" id="totalNominaMonto">RD$ 0.00</span>
+        </div>
+        <button onclick="closeNominaModal()" class="px-5 py-2 rounded-xl bg-sicaf-sidebar text-white text-sm font-semibold shadow">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT CLIENTE -->
+  <script>
+    // Inicializar datos al cargar
+    document.addEventListener("DOMContentLoaded", () => {
+      cargarDashboard();
+    });
+
+    async function cargarDashboard() {
+      try {
+        const res = await fetch("/api/dashboard/stats");
+        const data = await res.json();
+
+        document.getElementById("kpiTotalCosecha").textContent = `${data.kpis.total_cosecha_kg.toLocaleString()} kg`;
+        document.getElementById("kpiCampos").textContent = data.kpis.campos_activos;
+        document.getElementById("kpiValidados").textContent = data.kpis.registros_validados;
+        document.getElementById("kpiInmadura").textContent = `${data.kpis.pct_fruta_inmadura_promedio}%`;
+
+        // Renderizar tabla de últimos registros
+        const tbody = document.getElementById("tablaUltimosRegistros");
+        tbody.innerHTML = "";
+        data.ultimos_registros.forEach(r => {
+          tbody.innerHTML += `
+            <tr class="hover:bg-gray-50">
+              <td class="py-2.5 px-3 text-gray-600 font-mono">${r.fecha}</td>
+              <td class="py-2.5 px-3 font-medium text-gray-900">${r.campo}</td>
+              <td class="py-2.5 px-3 text-gray-700">${r.trabajador}</td>
+              <td class="py-2.5 px-3 text-right font-bold text-emerald-900">${r.kg} kg</td>
+              <td class="py-2.5 px-3 text-gray-600">${r.modalidad}</td>
+              <td class="py-2.5 px-3 text-center">
+                <span class="bg-green-100 text-green-800 text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center justify-center gap-1 w-max mx-auto">
+                  <i class="fa-solid fa-check text-[8px]"></i> Validado
+                </span>
+              </td>
+            </tr>
+          `;
+        });
+
+        // Gráfica de Campos
+        renderGraficaCampos(data.grafica_campos);
+
+      } catch (err) {
+        console.error("Error cargando dashboard:", err);
+      }
+    }
+
+    function renderGraficaCampos(datos) {
+      const ctx = document.getElementById("chartCampos").getContext("2d");
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: datos.map(d => d.campo),
+          datasets: [{
+            label: "Kilogramos",
+            data: datos.map(d => d.kg),
+            backgroundColor: "#2d6a4f",
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: "#f0ece4" } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function openRecepcionModal() {
+      document.getElementById("modalRecepcion").classList.remove("hidden");
+    }
+    function closeRecepcionModal() {
+      document.getElementById("modalRecepcion").classList.add("hidden");
+    }
+
+    async function guardarRecepcion() {
+      const fecha = document.getElementById("recFecha").value;
+      const kg = parseFloat(document.getElementById("recKgValidados").value);
+      const inmadura = parseFloat(document.getElementById("recPctInmadura").value);
+      const obs = document.getElementById("recObservaciones").value;
+
+      try {
+        const res = await fetch("/api/recepcion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fecha: fecha,
+            kg_validados: kg,
+            pct_fruta_inmadura: inmadura,
+            observaciones: obs
+          })
+        });
+        const result = await res.json();
+        alert(`Recepción completada.\nLote creado: ${result.lote_creado}\n${result.alerta_mensaje}`);
+        closeRecepcionModal();
+        cargarDashboard();
+      } catch (e) {
+        alert("Error al validar recepción: " + e.message);
+      }
+    }
+
+    async function openNominaModal() {
+      document.getElementById("modalNomina").classList.remove("hidden");
+      const res = await fetch("/api/nomina/liquidacion");
+      const data = await res.json();
+
+      const tbody = document.getElementById("tablaNomina");
+      tbody.innerHTML = "";
+      data.detalle.forEach(d => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-gray-50">
+            <td class="py-2.5 px-3 font-semibold text-gray-900">${d.nombre}</td>
+            <td class="py-2.5 px-3 text-gray-600">${d.cuadrilla}</td>
+            <td class="py-2.5 px-3 text-right font-bold text-gray-800">${d.kg_cosechados} kg</td>
+            <td class="py-2.5 px-3 text-right text-gray-600">RD$ ${d.tarifa_kg}</td>
+            <td class="py-2.5 px-3 text-right text-gray-800">RD$ ${d.subtotal_kg.toFixed(2)}</td>
+            <td class="py-2.5 px-3 text-right font-extrabold text-emerald-900">RD$ ${d.neto_a_pagar.toFixed(2)}</td>
+          </tr>
+        `;
+      });
+      document.getElementById("totalNominaMonto").textContent = `RD$ ${data.total_nomina_rd.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+    }
+
+    function closeNominaModal() {
+      document.getElementById("modalNomina").classList.add("hidden");
+    }
+
+    function showSection(sec) {
+      alert("Mostrando el catálogo oficial de los 25 campos cargados en el sistema desde el Anexo A.");
+    }
+
+    function openInventarioModal() {
+      fetch("/api/inventario").then(r => r.json()).then(data => {
+        let msg = "LIBRO MAYOR DE INVENTARIOS POR ALMACÉN:\n\n";
+        data.forEach(l => {
+          msg += `• [${l.lote}] en ${l.almacen}: ${l.kg_disponibles} kg (${l.estado} - ${l.clasificacion})\n`;
+        });
+        alert(msg);
+      });
+    }
+  </script>
+</body>
+</html>
