@@ -31,90 +31,264 @@
   <!-- CONTENIDO -->
   <main class="flex-1 p-4 max-w-md mx-auto w-full">
 
-    <!-- Tarjeta Formulario -->
-    <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e8dfd5] mb-4">
-      <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-100">
-        <i class="fa-solid fa-scale-balanced text-emerald-800 text-lg"></i>
-        <h2 class="text-base font-bold text-gray-800">Registrar Pesaje de Cosecha</h2>
-      </div>
-
-      <form id="formCosecha" onsubmit="guardarPesaje(event)" class="space-y-4">
-        <!-- Fecha -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha</label>
-          <input type="date" id="inputFecha" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-gray-50 font-medium" required>
-        </div>
-
-        <!-- Campo -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Campo Cosechado (25)</label>
-          <select id="selectCampo" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white font-medium" required>
-            <option value="">Cargando campos...</option>
-          </select>
-        </div>
-
-        <!-- Recolector (Individual) -->
-        <div>
-          <div class="flex justify-between items-center mb-1">
-            <label class="block text-xs font-semibold text-gray-700">Recolector / Jornalero</label>
-            <span class="text-[10px] text-amber-700 font-bold">Nómina Individual</span>
-          </div>
-          <select id="selectTrabajador" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white font-medium" required>
-            <option value="">Cargando trabajadores...</option>
-          </select>
-        </div>
-
-        <!-- Kilogramos Pesados -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Kilogramos en Báscula (kg)</label>
-          <div class="relative">
-            <input type="number" id="inputKg" step="0.1" min="0.1" placeholder="Ej. 45.5" class="w-full border-2 border-emerald-700 rounded-xl px-3 py-3 text-xl font-black text-emerald-900 focus:outline-none" required>
-            <span class="absolute right-3 top-3 text-sm font-bold text-gray-400">KG</span>
-          </div>
-        </div>
-
-        <!-- Báscula -->
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Punto de Pesaje / Báscula</label>
-          <select id="selectBascula" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 bg-gray-50">
-            <option value="Báscula #1 - Patio Central">Báscula #1 - Patio Central</option>
-            <option value="Báscula #2 - Móvil Campo">Báscula #2 - Móvil Campo</option>
-          </select>
-        </div>
-
-        <!-- Botón Guardar -->
-        <button type="submit" class="w-full bg-[#1b4332] hover:bg-[#143522] active:scale-95 text-white font-bold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 mt-2">
-          <i class="fa-solid fa-check"></i> Guardar Pesaje
-        </button>
-      </form>
+    <!-- SELECTOR DE MODO / PESTAÑAS MÓVILES -->
+    <div class="flex bg-white rounded-xl p-1 mb-4 shadow-sm border border-[#e8dfd5]">
+      <button id="tabBtnPesaje" onclick="cambiarPestana('pesaje')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-[#1b4332] text-white transition flex items-center justify-center gap-1.5 shadow">
+        <i class="fa-solid fa-scale-balanced"></i> 1. Pesaje Recolector
+      </button>
+      <button id="tabBtnSacos" onclick="cambiarPestana('sacos')" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-tags"></i> 2. Rotulación Sacos
+      </button>
     </div>
 
-    <!-- PENDIENTES DE SINCRONIZACIÓN -->
-    <div id="boxOfflineSync" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm mb-4">
-      <div class="flex justify-between items-center mb-2">
-        <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-          <i class="fa-solid fa-cloud-arrow-up text-amber-600"></i> <span id="countPendientes">0</span> registros pendientes offline
-        </span>
-        <button onclick="sincronizarOffline()" class="text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1 rounded-lg shadow">
-          Sincronizar
-        </button>
+    <!-- PESTAÑA 1: FORMULARIO PESAJE DE RECOLECTORES -->
+    <div id="seccionPesaje">
+      <!-- Tarjeta Formulario -->
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e8dfd5] mb-4">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-scale-balanced text-emerald-800 text-lg"></i>
+            <h2 class="text-base font-bold text-gray-800">Pesaje Individual de Cosecha</h2>
+          </div>
+          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Todo el día</span>
+        </div>
+
+        <form id="formCosecha" onsubmit="guardarPesaje(event)" class="space-y-4">
+          <!-- Fecha y Clima -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha</label>
+              <input type="date" id="inputFecha" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-gray-50 font-medium" required>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Condición Clima</label>
+              <select id="selectClima" class="w-full border border-gray-300 rounded-xl px-2 py-2 text-xs bg-white font-medium">
+                <option value="Soleado">☀️ Soleado (Seco)</option>
+                <option value="Nublado">⛅ Nublado</option>
+                <option value="Lluvia Ligera">🌧️ Lluvia Ligera</option>
+                <option value="Lluvia Intensa">⛈️ Lluvia / Mojado</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Campo -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Campo Cosechado (Finca La Peñita)</label>
+            <select id="selectCampo" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white font-medium" required>
+              <option value="">Cargando campos...</option>
+            </select>
+          </div>
+
+          <!-- Recolector (Individual) + Botón Crear -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-semibold text-gray-700">Recolector / Jornalero</label>
+              <button type="button" onclick="abrirModalNuevoRecolector()" class="text-[11px] text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded-lg font-bold flex items-center gap-1 transition">
+                <i class="fa-solid fa-user-plus"></i> + Nuevo Recolector
+              </button>
+            </div>
+            
+            <!-- Buscador rápido por nombre -->
+            <div class="relative mb-1.5">
+              <input type="text" id="filtroRecolector" oninput="filtrarTrabajadores()" placeholder="🔍 Escribe nombre para buscar rápido..." class="w-full border border-gray-200 rounded-xl px-3 py-1.5 text-xs bg-gray-50 text-gray-700 focus:bg-white focus:outline-none">
+            </div>
+
+            <select id="selectTrabajador" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white font-medium" required>
+              <option value="">Cargando trabajadores...</option>
+            </select>
+          </div>
+
+          <!-- Kilogramos Pesados -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Kilogramos en Báscula (kg)</label>
+            <div class="relative">
+              <input type="number" id="inputKg" step="0.1" min="0.1" placeholder="Ej. 45.5" class="w-full border-2 border-emerald-700 rounded-xl px-3 py-3 text-2xl font-black text-emerald-900 focus:outline-none" required>
+              <span class="absolute right-3 top-3.5 text-sm font-bold text-gray-400">KG</span>
+            </div>
+          </div>
+
+          <!-- Báscula / Punto de Pesaje -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Punto de Pesaje / Báscula</label>
+            <select id="selectBascula" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 bg-gray-50">
+              <option value="Báscula #1 - Patio Central">Báscula #1 - Patio Central</option>
+              <option value="Báscula #2 - Móvil Campo">Báscula #2 - Móvil Campo</option>
+              <option value="Báscula #3 - Tolva de Recibo">Báscula #3 - Tolva de Recibo</option>
+            </select>
+          </div>
+
+          <!-- Botón Guardar y Confirmar en Pantalla -->
+          <button type="submit" class="w-full bg-[#1b4332] hover:bg-[#143522] active:scale-95 text-white font-bold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 mt-2">
+            <i class="fa-solid fa-check-circle text-lg"></i> Confirmar y Guardar Pesaje
+          </button>
+        </form>
       </div>
-      <p class="text-[11px] text-amber-700">Guardados en la memoria del teléfono. Se enviarán automáticamente al detectar internet.</p>
+
+      <!-- PENDIENTES DE SINCRONIZACIÓN -->
+      <div id="boxOfflineSync" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+            <i class="fa-solid fa-cloud-arrow-up text-amber-600"></i> <span id="countPendientes">0</span> registros pendientes offline
+          </span>
+          <button onclick="sincronizarOffline()" class="text-xs bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1 rounded-lg shadow">
+            Sincronizar
+          </button>
+        </div>
+        <p class="text-[11px] text-amber-700">Guardados en la memoria del teléfono. Se enviarán automáticamente al detectar internet.</p>
+      </div>
+
+      <!-- RESUMEN Y ÚLTIMOS PESAJES DE HOY -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e8dfd5] mb-4">
+        <div class="flex justify-between items-center mb-2 pb-2 border-b border-gray-100">
+          <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider">Cosecha de Hoy en este Teléfono</h3>
+          <span id="badgeTotalHoy" class="text-xs font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">0 kg</span>
+        </div>
+        <div id="listaPesajesLocales" class="space-y-2 text-xs divide-y divide-gray-100">
+          <!-- Dinámico -->
+        </div>
+      </div>
     </div>
 
-    <!-- ÚLTIMOS PESAJES REGISTRADOS EN ESTE DISPOSITIVO -->
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e8dfd5]">
-      <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Pesajes de Hoy (Este Teléfono)</h3>
-      <div id="listaPesajesLocales" class="space-y-2 text-xs divide-y divide-gray-100">
-        <!-- Dinámico -->
+    <!-- PESTAÑA 2: ROTULACIÓN DE SACOS Y SUBCÓDIGOS PARA ALMACÉN (RN-2.5 / RN-3.B) -->
+    <div id="seccionSacos" class="hidden">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e8dfd5] mb-4">
+        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+          <i class="fa-solid fa-tags text-amber-700 text-lg"></i>
+          <div>
+            <h2 class="text-base font-bold text-gray-800">Emisión de Códigos y Subcódigos</h2>
+            <p class="text-[11px] text-gray-500">Para escribir a mano en la etiqueta física pegada al saco</p>
+          </div>
+        </div>
+
+        <form id="formGenerarSacos" onsubmit="generarSubcodigosSacos(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Campo de Origen</label>
+            <select id="sacosCampoSelect" onchange="actualizarPrefijoLote()" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-medium" required>
+              <option value="">Seleccione el campo...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Código de Lote Base</label>
+            <input type="text" id="sacosLoteCodigo" placeholder="Ej: LOTE-2026-FENELON-01" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-mono font-bold text-emerald-900 bg-emerald-50/50" required>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Cantidad de Sacos</label>
+              <input type="number" id="sacosCantidad" min="1" max="200" value="5" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-800" required>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Peso Prom. por Saco (kg)</label>
+              <input type="number" id="sacosPeso" step="0.5" value="45.0" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-800" required>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2 mt-1">
+            <i class="fa-solid fa-pen-nib"></i> Emitir Subcódigos de Sacos
+          </button>
+        </form>
+
+        <!-- RESULTADOS DE SUBCÓDIGOS EMITIDOS -->
+        <div id="resultadoSubcodigos" class="hidden mt-4 pt-4 border-t border-gray-200">
+          <div class="bg-amber-50 border-l-4 border-amber-600 p-3 rounded-r-xl mb-3">
+            <p class="text-xs font-bold text-amber-900">✍️ Instrucción para el operador:</p>
+            <p class="text-[11px] text-amber-800">Escriba con marcador estos subcódigos en la etiqueta física pegada en cada saco antes de cargarlo al camión.</p>
+          </div>
+
+          <div id="listaSacosEmitidos" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <!-- Dinámico -->
+          </div>
+        </div>
       </div>
     </div>
 
   </main>
 
+  <!-- MODAL: CONFIRMACIÓN IN-APP DE PESAJE (RN-2.2) -->
+  <div id="modalConfirmacion" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl animate-bounce-short">
+      <div class="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h3 class="text-lg font-black text-gray-800 mb-1">¡Pesaje Confirmado!</h3>
+      <p class="text-xs text-gray-500 mb-4">Registrado individualmente en nómina de cosecha</p>
+
+      <div class="bg-[#f7f3ee] rounded-2xl p-4 text-left space-y-2 mb-5 border border-[#e8dfd5]">
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-gray-500 font-medium">Recolector:</span>
+          <span id="confRecolector" class="font-bold text-gray-900">--</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-gray-500 font-medium">Campo:</span>
+          <span id="confCampo" class="font-bold text-gray-900">--</span>
+        </div>
+        <div class="flex justify-between items-center text-xs">
+          <span class="text-gray-500 font-medium">Peso Báscula:</span>
+          <span id="confPeso" class="font-black text-emerald-800 text-base">-- kg</span>
+        </div>
+        <div class="flex justify-between items-center text-[11px] text-gray-500 pt-1 border-t border-gray-200">
+          <span>Hora: <b id="confHora">--</b></span>
+          <span id="confEstadoRed" class="font-bold text-emerald-700">Online</span>
+        </div>
+      </div>
+
+      <button onclick="cerrarModalConfirmacion()" class="w-full bg-[#1b4332] hover:bg-[#143522] text-white font-bold py-3.5 rounded-2xl shadow-lg transition">
+        Siguiente Pesaje
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: AGREGAR NUEVO RECOLECTOR (+ NUEVO RECOLECTOR) -->
+  <div id="modalNuevoRecolector" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
+        <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-emerald-700"></i> Nuevo Recolector
+        </h3>
+        <button onclick="cerrarModalNuevoRecolector()" class="text-gray-400 hover:text-gray-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="formNuevoRecolector" onsubmit="guardarNuevoRecolector(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre Completo *</label>
+          <input type="text" id="nuevoNombre" placeholder="Ej: Ramón Antonio Valdez" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-emerald-600 font-medium" required>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Cuadrilla Asignada</label>
+          <select id="nuevaCuadrilla" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-medium">
+            <option value="Cuadrilla 1 (La Loma)">Cuadrilla 1 (La Loma)</option>
+            <option value="Cuadrilla 2 (El Valle)">Cuadrilla 2 (El Valle)</option>
+            <option value="Cuadrilla 3 (El Alto)">Cuadrilla 3 (El Alto)</option>
+            <option value="Cuadrilla Volante">Cuadrilla Volante</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Cédula o Código Interno (Opcional)</label>
+          <input type="text" id="nuevaCedula" placeholder="Ej: 001-XXXXXXX-X" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs bg-gray-50">
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="cerrarModalNuevoRecolector()" class="flex-1 bg-gray-100 text-gray-700 text-xs font-bold py-2.5 rounded-xl">
+            Cancelar
+          </button>
+          <button type="submit" class="flex-1 bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold py-2.5 rounded-xl shadow">
+            Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const STORAGE_KEY = "sicaf_offline_pesajes";
     let isOnline = navigator.onLine;
+    let cachedCampos = [];
+    let cachedTrabajadores = [];
 
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("inputFecha").value = new Date().toISOString().split("T")[0];
@@ -126,6 +300,25 @@
       window.addEventListener("online", () => { isOnline = true; actualizarEstadoRed(); sincronizarOffline(); });
       window.addEventListener("offline", () => { isOnline = false; actualizarEstadoRed(); });
     });
+
+    function cambiarPestana(pestana) {
+      const pPesaje = document.getElementById("seccionPesaje");
+      const pSacos = document.getElementById("seccionSacos");
+      const bPesaje = document.getElementById("tabBtnPesaje");
+      const bSacos = document.getElementById("tabBtnSacos");
+
+      if (pestana === 'pesaje') {
+        pPesaje.classList.remove("hidden");
+        pSacos.classList.add("hidden");
+        bPesaje.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-[#1b4332] text-white transition flex items-center justify-center gap-1.5 shadow";
+        bSacos.className = "flex-1 py-2 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition flex items-center justify-center gap-1.5";
+      } else {
+        pPesaje.classList.add("hidden");
+        pSacos.classList.remove("hidden");
+        bSacos.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-amber-700 text-white transition flex items-center justify-center gap-1.5 shadow";
+        bPesaje.className = "flex-1 py-2 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition flex items-center justify-center gap-1.5";
+      }
+    }
 
     function actualizarEstadoRed() {
       const b = document.getElementById("statusBadge");
@@ -144,49 +337,142 @@
           fetch("/api/campos"),
           fetch("/api/trabajadores")
         ]);
-        const campos = await resCampos.json();
-        const trabajadores = await resTrab.json();
+        cachedCampos = await resCampos.json();
+        cachedTrabajadores = await resTrab.json();
 
-        // Guardar copia local para cuando no haya red
-        localStorage.setItem("sicaf_cached_campos", JSON.stringify(campos));
-        localStorage.setItem("sicaf_cached_trabajadores", JSON.stringify(trabajadores));
-
-        poblarSelects(campos, trabajadores);
+        localStorage.setItem("sicaf_cached_campos", JSON.stringify(cachedCampos));
+        localStorage.setItem("sicaf_cached_trabajadores", JSON.stringify(cachedTrabajadores));
       } catch (e) {
-        // Cargar desde caché si no hay red
-        const campos = JSON.parse(localStorage.getItem("sicaf_cached_campos") || "[]");
-        const trabajadores = JSON.parse(localStorage.getItem("sicaf_cached_trabajadores") || "[]");
-        poblarSelects(campos, trabajadores);
+        cachedCampos = JSON.parse(localStorage.getItem("sicaf_cached_campos") || "[]");
+        cachedTrabajadores = JSON.parse(localStorage.getItem("sicaf_cached_trabajadores") || "[]");
+      }
+      poblarSelects();
+    }
+
+    function poblarSelects() {
+      const sc = document.getElementById("selectCampo");
+      const sacosCampo = document.getElementById("sacosCampoSelect");
+      sc.innerHTML = '<option value="">Seleccione el campo...</option>';
+      sacosCampo.innerHTML = '<option value="">Seleccione el campo...</option>';
+
+      cachedCampos.forEach(c => {
+        sc.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.variedad || 'Café'})</option>`;
+        sacosCampo.innerHTML += `<option value="${c.id}" data-codigo="${c.codigo}" data-nombre="${c.nombre}">${c.codigo} - ${c.nombre}</option>`;
+      });
+
+      renderTrabajadoresSelect(cachedTrabajadores);
+    }
+
+    function renderTrabajadoresSelect(lista) {
+      const st = document.getElementById("selectTrabajador");
+      const valorPrevio = st.value;
+      st.innerHTML = '<option value="">Seleccione el recolector...</option>';
+      lista.forEach(t => {
+        st.innerHTML += `<option value="${t.id}">${t.nombre_completo} (${t.cuadrilla || 'Cuadrilla'})</option>`;
+      });
+      if (valorPrevio) st.value = valorPrevio;
+    }
+
+    function filtrarTrabajadores() {
+      const query = document.getElementById("filtroRecolector").value.toLowerCase().trim();
+      if (!query) {
+        renderTrabajadoresSelect(cachedTrabajadores);
+        return;
+      }
+      const filtrados = cachedTrabajadores.filter(t => 
+        t.nombre_completo.toLowerCase().includes(query) || 
+        (t.cuadrilla && t.cuadrilla.toLowerCase().includes(query))
+      );
+      renderTrabajadoresSelect(filtrados);
+      if (filtrados.length === 1) {
+        document.getElementById("selectTrabajador").value = filtrados[0].id;
       }
     }
 
-    function poblarSelects(campos, trabajadores) {
-      const sc = document.getElementById("selectCampo");
-      sc.innerHTML = '<option value="">Seleccione el campo...</option>';
-      campos.forEach(c => {
-        sc.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.variedad})</option>`;
-      });
-
-      const st = document.getElementById("selectTrabajador");
-      st.innerHTML = '<option value="">Seleccione el recolector...</option>';
-      trabajadores.forEach(t => {
-        st.innerHTML += `<option value="${t.id}">${t.nombre_completo} (${t.cuadrilla})</option>`;
-      });
+    // --- MODAL NUEVO RECOLECTOR ---
+    function abrirModalNuevoRecolector() {
+      document.getElementById("modalNuevoRecolector").classList.remove("hidden");
+      document.getElementById("nuevoNombre").focus();
     }
 
+    function cerrarModalNuevoRecolector() {
+      document.getElementById("modalNuevoRecolector").classList.add("hidden");
+      document.getElementById("formNuevoRecolector").reset();
+    }
+
+    async function guardarNuevoRecolector(e) {
+      e.preventDefault();
+      const nombre = document.getElementById("nuevoNombre").value.trim();
+      const cuadrilla = document.getElementById("nuevaCuadrilla").value;
+      const cedula = document.getElementById("nuevaCedula").value.trim();
+
+      if (!nombre) return;
+
+      const nuevoTrabajador = {
+        id: Date.now(),
+        nombre_completo: nombre,
+        cuadrilla: cuadrilla,
+        cedula_id: cedula
+      };
+
+      if (isOnline) {
+        try {
+          const res = await fetch("/api/trabajadores", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nombre_completo: nombre, cuadrilla, cedula_id: cedula })
+          });
+          const data = await res.json();
+          if (data.status === "SUCCESS" || data.status === "ALREADY_EXISTS") {
+            nuevoTrabajador.id = data.trabajador.id;
+          }
+        } catch (err) {
+          console.warn("Error enviando recolector a servidor, guardado local:", err);
+        }
+      }
+
+      cachedTrabajadores.unshift(nuevoTrabajador);
+      localStorage.setItem("sicaf_cached_trabajadores", JSON.stringify(cachedTrabajadores));
+      renderTrabajadoresSelect(cachedTrabajadores);
+      document.getElementById("selectTrabajador").value = nuevoTrabajador.id;
+      cerrarModalNuevoRecolector();
+    }
+
+    // --- PESAJE INDIVIDUAL DE COSECHA ---
     async function guardarPesaje(e) {
       e.preventDefault();
+
+      const campoSelect = document.getElementById("selectCampo");
+      const trabSelect = document.getElementById("selectTrabajador");
+
+      const campoId = parseInt(campoSelect.value);
+      const trabId = parseInt(trabSelect.value);
+      const kg = parseFloat(document.getElementById("inputKg").value);
+
+      if (!campoId || !trabId || !kg) {
+        alert("Por favor complete todos los datos del pesaje.");
+        return;
+      }
+
+      const campoNombre = campoSelect.options[campoSelect.selectedIndex].text;
+      const trabNombre = trabSelect.options[trabSelect.selectedIndex].text;
+      const horaActual = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       const item = {
         clave_idempotencia: "MOVIL-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6),
         fecha: document.getElementById("inputFecha").value,
-        campo_id: parseInt(document.getElementById("selectCampo").value),
-        trabajador_id: parseInt(document.getElementById("selectTrabajador").value),
-        kg_pesados: parseFloat(document.getElementById("inputKg").value),
+        campo_id: campoId,
+        trabajador_id: trabId,
+        kg_pesados: kg,
         bascula_id: document.getElementById("selectBascula").value,
         modalidad: "KILO",
-        timestamp: new Date().toLocaleTimeString()
+        clima: document.getElementById("selectClima").value,
+        timestamp: horaActual,
+        recolector_nombre: trabNombre,
+        campo_nombre: campoNombre
       };
+
+      let guardadoEnServidor = false;
 
       if (isOnline) {
         try {
@@ -196,36 +482,56 @@
             body: JSON.stringify(item)
           });
           if (res.ok) {
-            guardarEnHistorialLocal(item, true);
-            limpiarForm();
-            alert("Pesaje registrado y sincronizado en el servidor.");
-            return;
+            guardadoEnServidor = true;
           }
         } catch (err) {
-          // Falla de red, guardar offline
+          guardadoEnServidor = false;
         }
       }
 
-      // Guardar offline
-      const pendientes = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      pendientes.push(item);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pendientes));
+      if (!guardadoEnServidor) {
+        const pendientes = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        pendientes.push(item);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(pendientes));
+        renderPendientes();
+      }
 
-      guardarEnHistorialLocal(item, false);
+      guardarEnHistorialLocal(item, guardadoEnServidor);
       limpiarForm();
-      renderPendientes();
-      alert("Pesaje guardado localmente (Offline). Se enviará al reconectar.");
+      mostrarModalConfirmacion(item, trabNombre, campoNombre, guardadoEnServidor);
+    }
+
+    function mostrarModalConfirmacion(item, recolector, campo, online) {
+      document.getElementById("confRecolector").textContent = recolector.split("(")[0].trim();
+      document.getElementById("confCampo").textContent = campo.split("-")[1] ? campo.split("-")[1].split("(")[0].trim() : campo;
+      document.getElementById("confPeso").textContent = item.kg_pesados.toFixed(1) + " kg";
+      document.getElementById("confHora").textContent = item.timestamp;
+      
+      const badgeNet = document.getElementById("confEstadoRed");
+      if (online) {
+        badgeNet.textContent = "Sincronizado ✅";
+        badgeNet.className = "font-bold text-emerald-700";
+      } else {
+        badgeNet.textContent = "Guardado Offline 💾";
+        badgeNet.className = "font-bold text-amber-700";
+      }
+
+      document.getElementById("modalConfirmacion").classList.remove("hidden");
+    }
+
+    function cerrarModalConfirmacion() {
+      document.getElementById("modalConfirmacion").classList.add("hidden");
+      document.getElementById("inputKg").focus();
     }
 
     function limpiarForm() {
       document.getElementById("inputKg").value = "";
-      document.getElementById("inputKg").focus();
     }
 
     function guardarEnHistorialLocal(item, synced) {
       const historial = JSON.parse(localStorage.getItem("sicaf_local_history") || "[]");
       historial.unshift({ ...item, synced });
-      if (historial.length > 10) historial.pop();
+      if (historial.length > 20) historial.pop();
       localStorage.setItem("sicaf_local_history", JSON.stringify(historial));
       renderListaLocal();
     }
@@ -234,23 +540,31 @@
       const h = JSON.parse(localStorage.getItem("sicaf_local_history") || "[]");
       const div = document.getElementById("listaPesajesLocales");
       div.innerHTML = "";
+
+      let totalKgHoy = 0;
+
       if (h.length === 0) {
         div.innerHTML = '<p class="text-gray-400 py-2">Sin pesajes en esta sesión.</p>';
+        document.getElementById("badgeTotalHoy").textContent = "0 kg";
         return;
       }
+
       h.forEach(p => {
+        totalKgHoy += (p.kg_pesados || 0);
         div.innerHTML += `
           <div class="flex justify-between items-center py-2">
             <div>
-              <p class="font-bold text-gray-800">${p.kg_pesados} kg</p>
-              <p class="text-[10px] text-gray-500">${p.timestamp} • ${p.bascula_id}</p>
+              <p class="font-bold text-gray-800">${p.kg_pesados} kg <span class="text-[11px] font-normal text-gray-600">• ${p.recolector_nombre ? p.recolector_nombre.split('(')[0] : 'Recolector'}</span></p>
+              <p class="text-[10px] text-gray-500">${p.timestamp} • ${p.campo_nombre ? p.campo_nombre.split('(')[0] : 'Campo'} • ${p.bascula_id}</p>
             </div>
-            <span class="text-[10px] ${p.synced ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'} px-2 py-0.5 rounded-full font-semibold">
-              ${p.synced ? 'Sincronizado' : 'Pendiente'}
+            <span class="text-[10px] ${p.synced ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'} px-2 py-0.5 rounded-full font-semibold">
+              ${p.synced ? 'Sincronizado' : 'Offline'}
             </span>
           </div>
         `;
       });
+
+      document.getElementById("badgeTotalHoy").textContent = totalKgHoy.toFixed(1) + " kg";
     }
 
     function renderPendientes() {
@@ -290,6 +604,83 @@
       if (enviados > 0) {
         alert(`Se sincronizaron ${enviados} pesajes pendientes exitosamente.`);
       }
+    }
+
+    // --- ROTULACIÓN DE SACOS Y SUBCÓDIGOS (RN-2.5 / RN-3.B) ---
+    function actualizarPrefijoLote() {
+      const sel = document.getElementById("sacosCampoSelect");
+      const opt = sel.options[sel.selectedIndex];
+      if (opt && opt.dataset.codigo) {
+        const cod = opt.dataset.codigo.replace("-", "").toUpperCase();
+        const fecha = new Date().toISOString().split("T")[0].replace(/-/g, "");
+        document.getElementById("sacosLoteCodigo").value = `LOTE-${fecha}-${cod}`;
+      }
+    }
+
+    async function generarSubcodigosSacos(e) {
+      e.preventDefault();
+      const loteCod = document.getElementById("sacosLoteCodigo").value.trim().toUpperCase();
+      const cant = parseInt(document.getElementById("sacosCantidad").value);
+      const peso = parseFloat(document.getElementById("sacosPeso").value);
+      const campoId = parseInt(document.getElementById("sacosCampoSelect").value) || null;
+
+      if (!loteCod || !cant || !peso) return;
+
+      const payload = {
+        codigo_lote: loteCod,
+        cantidad_sacos: cant,
+        peso_por_saco_kg: peso,
+        campo_id: campoId,
+        almacen_id: 1, // Beneficio Rancho Arriba
+        tipo_cafe: "CEREZA",
+        creado_por: "Capataz Móvil"
+      };
+
+      try {
+        const res = await fetch("/api/sacos/generar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.status === "SUCCESS") {
+          renderSacosEmitidos(data.sacos, loteCod);
+        } else {
+          alert("Error generando sacos: " + (data.detail || "Consulte al administrador"));
+        }
+      } catch (err) {
+        // Generar localmente si está offline
+        const sacosLocal = [];
+        for (let i = 1; i <= cant; i++) {
+          const sub = `${loteCod}-S${String(i).padStart(2, '0')}`;
+          sacosLocal.push({
+            subcodigo: sub,
+            peso_kg: peso,
+            rotulacion_manual: `LOTE: ${loteCod} | SACO: ${sub} | PESO: ${peso} kg`
+          });
+        }
+        renderSacosEmitidos(sacosLocal, loteCod);
+      }
+    }
+
+    function renderSacosEmitidos(sacos, lote) {
+      const div = document.getElementById("listaSacosEmitidos");
+      div.innerHTML = "";
+      sacos.forEach(s => {
+        div.innerHTML += `
+          <div class="bg-amber-50/70 border-2 border-dashed border-amber-400 rounded-xl p-3 flex justify-between items-center">
+            <div>
+              <span class="text-[10px] uppercase font-bold text-amber-800">Rotular a Mano en Etiqueta:</span>
+              <p class="font-mono font-black text-sm text-gray-900">${s.subcodigo}</p>
+              <p class="text-[11px] text-gray-600 font-semibold">Peso: ${s.peso_kg} kg • ${lote}</p>
+            </div>
+            <span class="text-xs bg-amber-200 text-amber-900 font-black px-2.5 py-1 rounded-lg">
+              ${s.peso_kg} KG
+            </span>
+          </div>
+        `;
+      });
+      document.getElementById("resultadoSubcodigos").classList.remove("hidden");
     }
   </script>
 </body>

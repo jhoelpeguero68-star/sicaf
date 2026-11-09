@@ -626,6 +626,46 @@
           </table>
         </div>
       </div>
+
+      <!-- CONTROL DE SACOS CON SUBCÓDIGOS Y TRASLADOS (RN-2.5 / RN-3.B) -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
+        <div class="flex flex-wrap justify-between items-center mb-4 pb-3 border-b border-gray-200 gap-3">
+          <div>
+            <h3 class="text-base font-black text-gray-900 flex items-center gap-2">
+              <i class="fa-solid fa-tags text-amber-700"></i> Control de Sacos con Códigos y Subcódigos (Rotulación Física a Mano)
+            </h3>
+            <p class="text-xs text-gray-500">Subcódigos correlativos emitidos por SICAF para escribir a mano con marcador en etiquetas. Validación saco por saco entre almacenes.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="abrirModalGenerarSacosWeb()" class="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-plus-circle"></i> Emitir Códigos y Subcódigos
+            </button>
+            <button onclick="abrirModalValidarTrasladoSacos()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-clipboard-check"></i> Validar Llegada de Sacos a Destino
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-amber-50/70 text-amber-950 uppercase border-b border-amber-200 font-bold">
+              <tr>
+                <th class="py-2.5 px-3">Subcódigo Saco</th>
+                <th class="py-2.5 px-3">Lote Base</th>
+                <th class="py-2.5 px-3">Campo Origen</th>
+                <th class="py-2.5 px-3">Almacén Actual</th>
+                <th class="py-2.5 px-3 text-right">Peso (kg)</th>
+                <th class="py-2.5 px-3 text-center">Tipo Café</th>
+                <th class="py-2.5 px-3 text-center">Etiqueta Manual</th>
+                <th class="py-2.5 px-3 text-center">Estado Físico</th>
+              </tr>
+            </thead>
+            <tbody id="tablaSacosInventario" class="divide-y divide-gray-100">
+              <!-- Cargado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- ==================== SECCIÓN 9: NÓMINA DE COSECHA CON TARIFAS ADMINISTRATIVAS (GOAL 3) ==================== -->
@@ -930,6 +970,123 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: EMITIR SACOS Y SUBCÓDIGOS (RN-2.5 / RN-3.B) ==================== -->
+  <div id="modalGenerarSacosWeb" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-tags text-amber-700"></i> Emisión de Códigos y Subcódigos de Sacos
+        </h3>
+        <button onclick="cerrarModalGenerarSacosWeb()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-3.5 my-4 text-xs">
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900">
+          <i class="fa-solid fa-pen-nib mr-1"></i> <strong>Rotulación física a mano (RN-3.B):</strong> El sistema emite los subcódigos correlativos para que el operador los copie con marcador en la etiqueta física pegada a cada saco.
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Código de Lote Base</label>
+          <input type="text" id="webSacoLote" placeholder="Ej: LOTE-2026-FENELON-01" class="w-full border border-gray-300 rounded-xl p-2.5 font-mono font-bold text-emerald-950 uppercase">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Cantidad de Sacos</label>
+            <input type="number" id="webSacoCantidad" min="1" max="500" value="10" class="w-full border border-gray-300 rounded-xl p-2.5 font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Peso Promedio por Saco (kg)</label>
+            <input type="number" id="webSacoPeso" step="0.5" value="45.0" class="w-full border border-gray-300 rounded-xl p-2.5 font-bold">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Almacén de Ubicación</label>
+            <select id="webSacoAlmacen" class="w-full border border-gray-300 rounded-xl p-2.5 font-medium">
+              <option value="1">1. Almacén Beneficio (Rancho Arriba)</option>
+              <option value="2">2. Almacén de Secado (Baní)</option>
+              <option value="3">3. Almacén Pergamino (Finca)</option>
+              <option value="4">4. Almacén Tostaduría</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Tipo de Café</label>
+            <select id="webSacoTipo" class="w-full border border-gray-300 rounded-xl p-2.5 font-medium">
+              <option value="CEREZA">Cereza Fresca</option>
+              <option value="PERGAMINO_MOJADO">Pergamino Mojado</option>
+              <option value="PERGAMINO_SECO">Pergamino Seco (10-12.5%)</option>
+              <option value="ORO">Café Verde / Oro Limpio</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Previsualización de Subcódigos generados -->
+        <div id="boxWebSubcodigosPreview" class="hidden mt-3 max-h-40 overflow-y-auto p-2 bg-gray-50 rounded-xl border border-gray-200">
+          <p class="font-bold text-gray-700 mb-1 text-[11px]">Subcódigos emitidos para rotulación:</p>
+          <div id="listaWebSubcodigosPreview" class="space-y-1 font-mono text-[11px] text-gray-800"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalGenerarSacosWeb()" class="px-4 py-2 text-xs font-bold text-gray-600">Cerrar</button>
+        <button onclick="guardarGenerarSacosWeb()" class="px-5 py-2 text-xs font-bold bg-amber-700 hover:bg-amber-800 text-white rounded-xl shadow">Emitir Subcódigos</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: VALIDAR TRASLADO DE SACOS EN DESTINO (RN-2.5) ==================== -->
+  <div id="modalValidarTrasladoSacos" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check text-emerald-800"></i> Validación de Llegada de Sacos
+        </h3>
+        <button onclick="cerrarModalValidarTrasladoSacos()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-3.5 my-4 text-xs">
+        <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950">
+          <i class="fa-solid fa-truck mr-1"></i> <strong>Recepción conforme (RN-2.5):</strong> El encargado del almacén de destino comprueba que cada saco despachado físicamente haya llegado al almacén, verificando subcódigos y peso con tolerancia 0.5%.
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Guía de Traslado en Tránsito</label>
+          <select id="selectTrasladoTransitoSacos" onchange="cargarSacosDeTraslado()" class="w-full border border-gray-300 rounded-xl p-2.5 font-mono font-bold text-emerald-950">
+            <option value="">Seleccione una guía en tránsito...</option>
+          </select>
+        </div>
+
+        <div id="boxListaSacosValidacion" class="hidden">
+          <div class="flex justify-between items-center mb-1">
+            <span class="font-bold text-gray-700">Marque los sacos que llegaron físicamente:</span>
+            <button type="button" onclick="marcarTodosSacos(true)" class="text-[10px] text-emerald-700 hover:underline font-bold">Marcar Todos Llegados</button>
+          </div>
+          <div id="checklistSacosTraslado" class="max-h-48 overflow-y-auto space-y-1.5 p-2 bg-gray-50 rounded-xl border border-gray-200">
+            <!-- Dinámico -->
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Peso Total en Báscula Destino (kg)</label>
+            <input type="number" id="inputPesoDestinoSacos" step="0.1" placeholder="Ej. 199.5" class="w-full border border-gray-300 rounded-xl p-2.5 font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Responsable Recepción</label>
+            <input type="text" id="inputRespRecepcionSacos" value="Encargado Almacén Destino" class="w-full border border-gray-300 rounded-xl p-2.5">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalValidarTrasladoSacos()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="confirmarRecepcionTrasladoSacos()" class="px-5 py-2 text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow">Confirmar Recepción</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SCRIPT CLIENTE COMPLETO -->
   <script>
     let rawCampos = [];
@@ -945,6 +1102,7 @@
       cargarSecados();
       cargarNomina();
       cargarInventario();
+      cargarSacosInventario();
       cargarAuditoria();
       cargarProductosSKU();
       consultarTrazabilidad();
@@ -1604,6 +1762,166 @@
       const res = await fetch("/api/sheets/sync", { method: "POST" });
       const data = await res.json();
       alert(data.mensaje);
+    }
+
+    // ==================== GESTIÓN Y CONTROL DE SACOS CON SUBCÓDIGOS (RN-2.5 / RN-3.B) ====================
+    async function cargarSacosInventario() {
+      try {
+        const res = await fetch("/api/sacos");
+        const data = await res.json();
+        const tbody = document.getElementById("tablaSacosInventario");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-400">No hay sacos registrados aún. Use "Emitir Códigos y Subcódigos".</td></tr>';
+          return;
+        }
+        data.forEach(s => {
+          tbody.innerHTML += `
+            <tr class="hover:bg-amber-50/50">
+              <td class="py-2.5 px-3 font-mono font-bold text-gray-900">${s.subcodigo_saco}</td>
+              <td class="py-2.5 px-3 font-mono text-[11px] text-gray-600">${s.codigo_lote}</td>
+              <td class="py-2.5 px-3 font-semibold text-emerald-950">${s.campo_nombre}</td>
+              <td class="py-2.5 px-3 text-gray-700">${s.almacen_nombre}</td>
+              <td class="py-2.5 px-3 text-right font-black text-amber-900">${s.peso_kg.toFixed(1)} kg</td>
+              <td class="py-2.5 px-3 text-center"><span class="bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded-full">${s.tipo_cafe}</span></td>
+              <td class="py-2.5 px-3 text-center"><span class="text-xs text-amber-700 font-bold"><i class="fa-solid fa-pen-nib"></i> A Mano</span></td>
+              <td class="py-2.5 px-3 text-center">
+                <span class="text-[10px] ${s.estado === 'EN_ALMACEN' ? 'bg-emerald-100 text-emerald-800' : (s.estado === 'EN_TRANSITO' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800')} font-bold px-2 py-0.5 rounded-full">
+                  ${s.estado}
+                </span>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (e) {
+        console.error("Error cargando sacos:", e);
+      }
+    }
+
+    function abrirModalGenerarSacosWeb() {
+      document.getElementById("modalGenerarSacosWeb").classList.remove("hidden");
+    }
+
+    function cerrarModalGenerarSacosWeb() {
+      document.getElementById("modalGenerarSacosWeb").classList.add("hidden");
+      document.getElementById("boxWebSubcodigosPreview").classList.add("hidden");
+    }
+
+    async function guardarGenerarSacosWeb() {
+      const loteCod = document.getElementById("webSacoLote").value.trim().toUpperCase();
+      const cant = parseInt(document.getElementById("webSacoCantidad").value);
+      const peso = parseFloat(document.getElementById("webSacoPeso").value);
+      const almId = parseInt(document.getElementById("webSacoAlmacen").value);
+      const tipo = document.getElementById("webSacoTipo").value;
+
+      if (!loteCod || !cant || !peso) {
+        alert("Complete todos los campos obligatorios.");
+        return;
+      }
+
+      const res = await fetch("/api/sacos/generar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codigo_lote: loteCod,
+          cantidad_sacos: cant,
+          peso_por_saco_kg: peso,
+          almacen_id: almId,
+          tipo_cafe: tipo,
+          creado_por: "Administración Web"
+        })
+      });
+      const data = await res.json();
+      if (data.status === "SUCCESS") {
+        const preview = document.getElementById("listaWebSubcodigosPreview");
+        preview.innerHTML = "";
+        data.sacos.forEach(s => {
+          preview.innerHTML += `<div>✍️ <b>${s.subcodigo}</b> (${s.peso_kg} kg)</div>`;
+        });
+        document.getElementById("boxWebSubcodigosPreview").classList.remove("hidden");
+        cargarSacosInventario();
+        alert(`Se emitieron ${data.cantidad_generada} sacos con subcódigos.\nRecuerde escribirlos a mano con marcador en las etiquetas físicas.`);
+      } else {
+        alert("Error al emitir sacos: " + JSON.stringify(data));
+      }
+    }
+
+    async function abrirModalValidarTrasladoSacos() {
+      const res = await fetch("/api/traslados");
+      const traslados = await res.json();
+      const sel = document.getElementById("selectTrasladoTransitoSacos");
+      sel.innerHTML = '<option value="">Seleccione una guía en tránsito...</option>';
+      const enTransito = traslados.filter(t => t.estado === "EN_TRANSITO");
+      if (enTransito.length === 0) {
+        sel.innerHTML = '<option value="">No hay traslados en tránsito actualmente</option>';
+      } else {
+        enTransito.forEach(t => {
+          sel.innerHTML += `<option value="${t.id}">${t.numero_guia} (${t.origen} ➔ ${t.destino}) - ${t.kg_despachados} kg</option>`;
+        });
+      }
+      document.getElementById("modalValidarTrasladoSacos").classList.remove("hidden");
+    }
+
+    function cerrarModalValidarTrasladoSacos() {
+      document.getElementById("modalValidarTrasladoSacos").classList.add("hidden");
+      document.getElementById("boxListaSacosValidacion").classList.add("hidden");
+    }
+
+    async function cargarSacosDeTraslado() {
+      const tId = parseInt(document.getElementById("selectTrasladoTransitoSacos").value);
+      if (!tId) return;
+      const res = await fetch("/api/sacos?estado=EN_TRANSITO");
+      const sacos = await res.json();
+      const sacosT = sacos.filter(s => s.traslado_id === tId);
+      const box = document.getElementById("checklistSacosTraslado");
+      box.innerHTML = "";
+      if (sacosT.length === 0) {
+        box.innerHTML = '<p class="text-xs text-gray-500 py-1">No hay sacos individuales asociados a este traslado (traslado general por peso).</p>';
+      } else {
+        sacosT.forEach(s => {
+          box.innerHTML += `
+            <label class="flex items-center gap-2 text-xs bg-white p-2 rounded-lg border border-gray-200 cursor-pointer">
+              <input type="checkbox" name="sacoCheck" value="${s.subcodigo_saco}" checked class="rounded text-emerald-800 focus:ring-emerald-600">
+              <span class="font-mono font-bold text-gray-900">${s.subcodigo_saco}</span>
+              <span class="text-gray-500">(${s.peso_kg} kg - ${s.tipo_cafe})</span>
+            </label>
+          `;
+        });
+      }
+      document.getElementById("boxListaSacosValidacion").classList.remove("hidden");
+    }
+
+    function marcarTodosSacos(marcar) {
+      document.querySelectorAll("input[name='sacoCheck']").forEach(cb => cb.checked = marcar);
+    }
+
+    async function confirmarRecepcionTrasladoSacos() {
+      const tId = parseInt(document.getElementById("selectTrasladoTransitoSacos").value);
+      if (!tId) {
+        alert("Seleccione un traslado en tránsito.");
+        return;
+      }
+      const marcados = Array.from(document.querySelectorAll("input[name='sacoCheck']:checked")).map(cb => cb.value);
+      const pesoRecibido = parseFloat(document.getElementById("inputPesoDestinoSacos").value);
+      const resp = document.getElementById("inputRespRecepcionSacos").value.trim();
+
+      const res = await fetch("/api/traslados/recibir-sacos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          traslado_id: tId,
+          subcodigos_recibidos: marcados,
+          responsable_recepcion: resp,
+          peso_total_recibido: isNaN(pesoRecibido) ? null : pesoRecibido
+        })
+      });
+      const data = await res.json();
+      alert(`Recepción completada.\nEstado: ${data.status}\nSacos recibidos: ${data.sacos_recibidos}/${data.sacos_despachados}\n${data.mensaje}`);
+      cerrarModalValidarTrasladoSacos();
+      cargarSacosInventario();
+      cargarInventario();
+      cargarDashboardIntegral();
     }
   </script>
 </body>

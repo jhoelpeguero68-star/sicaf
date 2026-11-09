@@ -370,3 +370,95 @@ def test_pa26_tarifas_administrativas_ajustes():
     assert bruto == 1700.0
     assert neto == 1500.0
 
+# ----------------- PA-27 Alta Rápida de Recolector desde App Móvil (RN-2.1) -----------------
+def test_pa27_alta_recolector_app():
+    from backend.database import SessionLocal
+    from backend.models import Trabajador
+    from backend.main import crear_trabajador, TrabajadorCreateInput
+
+    db = SessionLocal()
+    try:
+        nuevo = TrabajadorCreateInput(
+            nombre_completo="Carlos Almonte Test",
+            cuadrilla="Cuadrilla 1 (La Loma)",
+            cedula_id="001-9988776-5"
+        )
+        res = crear_trabajador(nuevo, db)
+        assert res["status"] in ["SUCCESS", "ALREADY_EXISTS"]
+        assert "Carlos Almonte Test" in res["trabajador"]["nombre_completo"]
+
+        # Verificar en base de datos
+        t = db.query(Trabajador).filter(Trabajador.nombre_completo == "Carlos Almonte Test").first()
+        assert t is not None
+        assert t.activo is True
+    finally:
+        db.close()
+
+# ----------------- PA-28 Emisión de Subcódigos de Sacos y Validación en Destino (RN-2.5 / RN-3.B) -----------------
+def test_pa28_control_sacos_subcodigos_traslado():
+    import uuid
+    from backend.database import SessionLocal
+    from backend.models import Saco, Traslado
+    from backend.main import (
+        generar_sacos, SacosGenerarInput,
+        despachar_traslado_con_sacos, TrasladoSacosDespachoInput,
+        recibir_traslado_con_sacos, TrasladoSacosRecepcionInput
+    )
+
+    db = SessionLocal()
+    try:
+        # 1. Generar 4 sacos para Finca La Peñita (Fenelon) con subcódigos correlativos
+        lote_test = f"TEST-FEN-{uuid.uuid4().hex[:6].upper()}"
+        gen_input = SacosGenerarInput(
+            codigo_lote=lote_test,
+            cantidad_sacos=4,
+            peso_por_saco_kg=50.0,
+            almacen_id=1 # Beneficio Rancho Arriba
+        )
+        res_gen = generar_sacos(gen_input, db)
+        assert res_gen["status"] == "SUCCESS"
+        assert res_gen["cantidad_generada"] == 4
+        assert res_gen["peso_total_estimado_kg"] == 200.0
+        subcods = [s["subcodigo"] for s in res_gen["sacos"]]
+        assert len(subcods) == 4
+        assert subcods[0] == f"{lote_test}-S01"
+
+        # 2. Despachar los 4 sacos desde Almacén 1 (Rancho Arriba) hacia Almacén 2 (Secado Baní)
+        despacho_input = TrasladoSacosDespachoInput(
+            almacen_origen_id=1,
+            almacen_destino_id=2,
+            chofer="Manuel Tejeda",
+            vehiculo_placa="L-345678",
+            responsable_despacho="Capataz Móvil",
+            subcodigos_sacos=subcods
+        )
+        res_desp = despachar_traslado_con_sacos(despacho_input, db)
+        assert res_desp["status"] == "DESPACHADO"
+        assert res_desp["cantidad_sacos"] == 4
+        assert res_desp["total_kg_despachados"] == 200.0
+
+        traslado_id = res_desp["traslado_id"]
+
+        # 3. El receptor en Baní valida los sacos físicamente: llegaron los 4 completos
+        rec_input = TrasladoSacosRecepcionInput(
+            traslado_id=traslado_id,
+            subcodigos_recibidos=subcods,
+            responsable_recepcion="Encargado Almacén Baní",
+            peso_total_recibido=199.5 # Merma normal de transporte de 0.5 kg (0.25% < 0.5% tolerancia)
+        )
+        res_rec = recibir_traslado_con_sacos(rec_input, db)
+        assert res_rec["status"] == "CONCILIADO"
+        assert res_rec["sacos_recibidos"] == 4
+        assert len(res_rec["sacos_faltantes"]) == 0
+        assert res_rec["fuera_tolerancia"] is False
+
+        # Verificar que los sacos ahora están en Almacén 2 (Baní)
+        sacos_db = db.query(Saco).filter(Saco.subcodigo_saco.in_(subcods)).all()
+        for s in sacos_db:
+            assert s.almacen_actual_id == 2
+            assert s.estado == "EN_ALMACEN"
+
+    finally:
+        db.close()
+
+

@@ -304,6 +304,32 @@ class TrasladoDetalle(Base):
 
     lote = relationship("Lote")
 
+class Saco(Base):
+    """
+    Control de Sacos individuales con Códigos y Subcódigos (RN-2.5 / RN-3.B).
+    El subcódigo generado se escribe a mano en la etiqueta física pegada en el saco.
+    Permite validar que los sacos que salen de un almacén lleguen al almacén destino.
+    """
+    __tablename__ = "inv_sacos"
+    id = Column(Integer, primary_key=True, index=True)
+    codigo_lote = Column(String(50), index=True, nullable=False) # Ej: LOTE-2026-FENELON-01
+    subcodigo_saco = Column(String(60), unique=True, index=True, nullable=False) # Ej: LOTE-2026-FENELON-01-S01
+    campo_id = Column(Integer, ForeignKey("mae_campos.id"), nullable=True)
+    lote_id = Column(Integer, ForeignKey("inv_lotes.id"), nullable=True)
+    almacen_actual_id = Column(Integer, ForeignKey("mae_almacenes.id"), default=1) # 1: Beneficio Rancho Arriba
+    peso_kg = Column(Float, nullable=False) # Peso específico de este saco
+    tipo_cafe = Column(String(40), default="CEREZA") # 'CEREZA', 'PERGAMINO_MOJADO', 'PERGAMINO_SECO', 'ORO'
+    estado = Column(String(30), default="EN_ALMACEN") # 'EN_ALMACEN', 'EN_TRANSITO', 'RECIBIDO', 'PROCESADO'
+    etiqueta_escrita_a_mano = Column(Boolean, default=True) # Marcado físico a mano
+    traslado_id = Column(Integer, ForeignKey("trx_traslados.id"), nullable=True)
+    creado_en = Column(DateTime, default=datetime.utcnow)
+    creado_por = Column(String(100), default="Capataz / Encargado")
+
+    campo = relationship("Campo")
+    lote = relationship("Lote")
+    almacen_actual = relationship("Almacen")
+    traslado = relationship("Traslado")
+
 class AnalisisCalidad(Base):
     """Módulo de Calidad y Catación (RN-40 a RN-44)"""
     __tablename__ = "cal_analisis"

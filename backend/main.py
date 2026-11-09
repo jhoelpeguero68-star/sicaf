@@ -28,7 +28,7 @@ from .models import (
     Empresa, Usuario, Campana, Campo, CampoHistorial, Trabajador, ProductorExterno,
     Tarifa, Almacen, ProductoSKU, JornadaCosecha, RegistroCosecha, RecepcionBeneficio,
     Lote, LoteCampo, MovimientoInventario, SecadoLote, MedicionHumedad,
-    ProcesoTransformacion, LoteGenealogia, Traslado, TrasladoDetalle, AnalisisCalidad,
+    ProcesoTransformacion, LoteGenealogia, Traslado, TrasladoDetalle, Saco, AnalisisCalidad,
     ConteoFisico, ConteoDetalle, NominaSemana, NominaDetalle, NominaAjuste, AuditoriaLog,
     generar_hash_auditoria
 )
@@ -87,6 +87,42 @@ class CosechaRegistroInput(BaseModel):
     clave_idempotencia: Optional[str] = None
     fecha: Optional[str] = None
     registrado_por: str = "Capataz Móvil"
+    clima: Optional[str] = "Soleado"
+    turno: Optional[str] = "Continuo"
+    notas: Optional[str] = None
+
+class TrabajadorCreateInput(BaseModel):
+    nombre_completo: str
+    cedula_id: Optional[str] = None
+    cuadrilla: Optional[str] = "Cuadrilla Principal"
+
+class SacosGenerarInput(BaseModel):
+    codigo_lote: str # ej: LOTE-2026-FENELON-01
+    cantidad_sacos: int # ej: 10
+    peso_por_saco_kg: float = 45.0
+    campo_id: Optional[int] = None
+    lote_id: Optional[int] = None
+    almacen_id: int = 1 # 1: Beneficio Rancho Arriba
+    tipo_cafe: str = "CEREZA" # CEREZA, PERGAMINO_MOJADO, PERGAMINO_SECO, ORO
+    creado_por: str = "Capataz de Campo / Encargado"
+
+class TrasladoSacosDespachoInput(BaseModel):
+    almacen_origen_id: int
+    almacen_destino_id: int
+    chofer: str
+    vehiculo_placa: str
+    responsable_despacho: str
+    subcodigos_sacos: List[str]
+    observaciones: Optional[str] = None
+
+class TrasladoSacosRecepcionInput(BaseModel):
+    traslado_id: int
+    subcodigos_recibidos: List[str]
+    responsable_recepcion: str
+    peso_total_recibido: Optional[float] = None
+    resolucion_diferencia: Optional[str] = "VALIDACION_FISICA_SACOS"
+    autorizado_por: Optional[str] = None
+    observaciones: Optional[str] = None
 
 class RecepcionBeneficioInput(BaseModel):
     fecha: str
@@ -514,7 +550,48 @@ def fusionar_campos(item: CampoFusionInput, db: Session = Depends(get_db)):
 # ----------------- COSECHA Y RECOLECTORES (FASE 3 / PA-01 / PA-17) -----------------
 @app.get("/api/trabajadores")
 def list_trabajadores(db: Session = Depends(get_db)):
-    return db.query(Trabajador).filter(Trabajador.activo == True).all()
+    return db.query(Trabajador).filter(Trabajador.activo == True).order_by(Trabajador.nombre_completo.asc()).all()
+
+@app.post("/api/trabajadores")
+def crear_trabajador(item: TrabajadorCreateInput, db: Session = Depends(get_db)):
+    """Alta rápida de recolector desde la aplicación móvil o administrativa (RN-2.1)"""
+    existente = db.query(Trabajador).filter(
+        func.lower(Trabajador.nombre_completo) == item.nombre_completo.strip().lower()
+    ).first()
+    if existente:
+        return {
+            "status": "ALREADY_EXISTS",
+            "mensaje": f"El recolector {existente.nombre_completo} ya se encuentra registrado",
+            "trabajador": {
+                "id": existente.id,
+                "nombre_completo": existente.nombre_completo,
+                "cuadrilla": existente.cuadrilla,
+                "cedula_id": existente.cedula_id
+            }
+        }
+    
+    t = Trabajador(
+        nombre_completo=item.nombre_completo.strip(),
+        cedula_id=item.cedula_id,
+        cuadrilla=item.cuadrilla.strip() if item.cuadrilla else "Cuadrilla Principal",
+        activo=True
+    )
+    db.add(t)
+    db.commit()
+    db.refresh(t)
+
+    registrar_auditoria(db, "Capataz Móvil", "CREAR_TRABAJADOR", "mae_trabajadores", str(t.id), f"Nuevo recolector creado: {t.nombre_completo} ({t.cuadrilla})")
+
+    return {
+        "status": "SUCCESS",
+        "mensaje": "Recolector agregado correctamente",
+        "trabajador": {
+            "id": t.id,
+            "nombre_completo": t.nombre_completo,
+            "cuadrilla": t.cuadrilla,
+            "cedula_id": t.cedula_id
+        }
+    }
 
 @app.post("/api/cosecha")
 def registrar_cosecha(item: CosechaRegistroInput, db: Session = Depends(get_db)):
@@ -884,6 +961,215 @@ def recibir_traslado(item: TrasladoRecepcionInput, db: Session = Depends(get_db)
         "diferencia_pct": dif_pct,
         "fuera_tolerancia": fuera_tolerancia,
         "mensaje": "Diferencia supera tolerancia (0.5%). Requiere autorización formal." if fuera_tolerancia else "Traslado recibido y conciliado en tolerancia."
+    }
+
+# ----------------- EMISIÓN Y CONTROL DE SACOS CON SUBCÓDIGOS (RN-2.5 / RN-3.A / RN-3.B) -----------------
+@app.post("/api/sacos/generar")
+def generar_sacos(item: SacosGenerarInput, db: Session = Depends(get_db)):
+    """
+    Emite códigos de lote y subcódigos correlativos por saco (RN-2.5 / RN-3.B).
+    Los subcódigos generados se escriben a mano en la etiqueta pegada físicamente en cada saco.
+    """
+    prefijo = item.codigo_lote.strip().upper()
+    existentes = db.query(Saco).filter(Saco.codigo_lote == prefijo).count()
+
+    nuevos_sacos = []
+    instrucciones_rotulacion = []
+
+    for i in range(1, item.cantidad_sacos + 1):
+        num_saco = existentes + i
+        subcodigo = f"{prefijo}-S{num_saco:02d}"
+        saco = Saco(
+            codigo_lote=prefijo,
+            subcodigo_saco=subcodigo,
+            campo_id=item.campo_id,
+            lote_id=item.lote_id,
+            almacen_actual_id=item.almacen_id,
+            peso_kg=item.peso_por_saco_kg,
+            tipo_cafe=item.tipo_cafe,
+            estado="EN_ALMACEN",
+            etiqueta_escrita_a_mano=True,
+            creado_por=item.creado_por
+        )
+        db.add(saco)
+        nuevos_sacos.append(saco)
+        instrucciones_rotulacion.append({
+            "subcodigo": subcodigo,
+            "peso_kg": item.peso_por_saco_kg,
+            "rotulacion_manual": f"LOTE: {prefijo} | SACO: {subcodigo} | PESO: {item.peso_por_saco_kg} kg"
+        })
+
+    db.commit()
+
+    registrar_auditoria(
+        db, item.creado_por, "GENERACION_SACOS", "inv_sacos", prefijo,
+        f"Generados {item.cantidad_sacos} sacos con subcódigos para lote {prefijo}. Rotulación física a mano."
+    )
+
+    return {
+        "status": "SUCCESS",
+        "codigo_lote": prefijo,
+        "cantidad_generada": len(nuevos_sacos),
+        "peso_total_estimado_kg": round(item.cantidad_sacos * item.peso_por_saco_kg, 2),
+        "instruccion": "Escriba a mano cada subcódigo y su peso en la etiqueta física pegada en el saco.",
+        "sacos": instrucciones_rotulacion
+    }
+
+@app.get("/api/sacos")
+def list_sacos(
+    almacen_id: Optional[int] = None,
+    codigo_lote: Optional[str] = None,
+    estado: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Consulta inventario de sacos individuales con sus subcódigos y estado físico"""
+    q = db.query(Saco)
+    if almacen_id:
+        q = q.filter(Saco.almacen_actual_id == almacen_id)
+    if codigo_lote:
+        q = q.filter(Saco.codigo_lote == codigo_lote.upper())
+    if estado:
+        q = q.filter(Saco.estado == estado.upper())
+    
+    sacos = q.order_by(Saco.subcodigo_saco.asc()).all()
+    return [
+        {
+            "id": s.id,
+            "codigo_lote": s.codigo_lote,
+            "subcodigo_saco": s.subcodigo_saco,
+            "campo_id": s.campo_id,
+            "campo_nombre": s.campo.nombre if s.campo else "N/A",
+            "almacen_id": s.almacen_actual_id,
+            "almacen_nombre": s.almacen_actual.nombre if s.almacen_actual else "N/A",
+            "peso_kg": s.peso_kg,
+            "tipo_cafe": s.tipo_cafe,
+            "estado": s.estado,
+            "traslado_id": s.traslado_id,
+            "etiqueta_escrita_a_mano": s.etiqueta_escrita_a_mano,
+            "creado_en": str(s.creado_en)
+        } for s in sacos
+    ]
+
+@app.post("/api/traslados/despachar-sacos")
+def despachar_traslado_con_sacos(item: TrasladoSacosDespachoInput, db: Session = Depends(get_db)):
+    """
+    Despacha un traslado entre almacenes validando los subcódigos de los sacos que van al camión (RN-2.5).
+    Cambia el estado de los sacos despachados a 'EN_TRANSITO'.
+    """
+    sacos = db.query(Saco).filter(
+        Saco.subcodigo_saco.in_(item.subcodigos_sacos),
+        Saco.almacen_actual_id == item.almacen_origen_id,
+        Saco.estado == "EN_ALMACEN"
+    ).all()
+
+    if len(sacos) != len(item.subcodigos_sacos):
+        encontrados = {s.subcodigo_saco for s in sacos}
+        faltantes = set(item.subcodigos_sacos) - encontrados
+        raise HTTPException(
+            status_code=400,
+            detail=f"Sacos no disponibles en almacén origen ({item.almacen_origen_id}): {list(faltantes)}"
+        )
+
+    peso_total_despachado = sum(s.peso_kg for s in sacos)
+    guia = f"GUIA-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
+
+    traslado = Traslado(
+        numero_guia=guia,
+        almacen_origen_id=item.almacen_origen_id,
+        almacen_destino_id=item.almacen_destino_id,
+        chofer=item.chofer,
+        vehiculo_placa=item.vehiculo_placa,
+        responsable_despacho=item.responsable_despacho,
+        total_kg_despachados=round(peso_total_despachado, 2),
+        estado="EN_TRANSITO",
+        observaciones=f"Despacho con {len(sacos)} sacos rotulados a mano. {item.observaciones or ''}"
+    )
+    db.add(traslado)
+    db.commit()
+    db.refresh(traslado)
+
+    # Actualizar estado de cada saco
+    for s in sacos:
+        s.estado = "EN_TRANSITO"
+        s.traslado_id = traslado.id
+
+    db.commit()
+
+    registrar_auditoria(
+        db, item.responsable_despacho, "DESPACHO_TRASLADO_SACOS", "trx_traslados", str(traslado.id),
+        f"Despacho Guía {guia} con {len(sacos)} sacos hacia almacén {item.almacen_destino_id} ({peso_total_despachado:.2f} kg)"
+    )
+
+    return {
+        "status": "DESPACHADO",
+        "traslado_id": traslado.id,
+        "numero_guia": guia,
+        "cantidad_sacos": len(sacos),
+        "total_kg_despachados": round(peso_total_despachado, 2),
+        "subcodigos_despachados": [s.subcodigo_saco for s in sacos]
+    }
+
+@app.post("/api/traslados/recibir-sacos")
+def recibir_traslado_con_sacos(item: TrasladoSacosRecepcionInput, db: Session = Depends(get_db)):
+    """
+    El receptor valida que los sacos que salieron de un almacén lleguen al otro almacén (RN-2.5).
+    Verifica individualmente los subcódigos recibidos, detecta faltantes y calcula merma/diferencia con tolerancia 0.5%.
+    """
+    t = db.query(Traslado).filter(Traslado.id == item.traslado_id).first()
+    if not t or t.estado != "EN_TRANSITO":
+        raise HTTPException(status_code=400, detail="Traslado no encontrado o no está en tránsito")
+
+    # Sacos que salieron en este traslado
+    sacos_despachados = db.query(Saco).filter(Saco.traslado_id == t.id).all()
+    subcodigos_esperados = {s.subcodigo_saco: s for s in sacos_despachados}
+
+    subcodigos_recibidos_set = set(item.subcodigos_recibidos)
+    sacos_llegaron = []
+    sacos_faltantes = []
+
+    for subcod, saco in subcodigos_esperados.items():
+        if subcod in subcodigos_recibidos_set:
+            saco.estado = "EN_ALMACEN"
+            saco.almacen_actual_id = t.almacen_destino_id
+            sacos_llegaron.append(saco)
+        else:
+            saco.estado = "FALTANTE_EN_TRANSITO"
+            sacos_faltantes.append(saco)
+
+    peso_calculado_llegaron = sum(s.peso_kg for s in sacos_llegaron)
+    peso_recibido_final = item.peso_total_recibido if item.peso_total_recibido is not None else peso_calculado_llegaron
+
+    dif_kg = round(t.total_kg_despachados - peso_recibido_final, 2)
+    dif_pct = round((dif_kg / t.total_kg_despachados) * 100, 2) if t.total_kg_despachados > 0 else 0.0
+    fuera_tolerancia = (dif_pct > t.tolerancia_pct) or (len(sacos_faltantes) > 0)
+
+    t.fecha_recepcion = datetime.utcnow()
+    t.total_kg_recibidos = round(peso_recibido_final, 2)
+    t.diferencia_kg = dif_kg
+    t.responsable_recepcion = item.responsable_recepcion
+    t.resolucion_diferencia = item.resolucion_diferencia or ("FALTANTE_SACOS" if sacos_faltantes else "CONCILIACION_SACOS")
+    t.autorizado_por = item.autorizado_por
+    t.estado = "RECIBIDO_CON_DIFERENCIA" if fuera_tolerancia else "CONCILIADO"
+
+    db.commit()
+
+    registrar_auditoria(
+        db, item.responsable_recepcion, "RECEPCION_TRASLADO_SACOS", "trx_traslados", str(t.id),
+        f"Recepción Guía {t.numero_guia}: {len(sacos_llegaron)}/{len(sacos_despachados)} sacos recibidos. Faltantes: {len(sacos_faltantes)}. Dif: {dif_kg:.2f} kg ({dif_pct:.2f}%)"
+    )
+
+    return {
+        "status": t.estado,
+        "numero_guia": t.numero_guia,
+        "sacos_despachados": len(sacos_despachados),
+        "sacos_recibidos": len(sacos_llegaron),
+        "sacos_faltantes": [s.subcodigo_saco for s in sacos_faltantes],
+        "kg_despachados": t.total_kg_despachados,
+        "kg_recibidos": t.total_kg_recibidos,
+        "diferencia_kg": dif_kg,
+        "diferencia_pct": dif_pct,
+        "fuera_tolerancia": fuera_tolerancia,
+        "mensaje": f"Alerta: {len(sacos_faltantes)} saco(s) faltante(s) o diferencia fuera de tolerancia (0.5%)." if fuera_tolerancia else "Todos los sacos llegaron conformes al almacén destino."
     }
 
 # ----------------- TRILLADO, TOSTADO Y EMPAQUE (F-01 a F-06 / RN-45 a RN-49 / PA-04, PA-23, PA-24) -----------------
