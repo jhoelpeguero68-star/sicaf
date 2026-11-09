@@ -372,6 +372,20 @@ class NominaDetalle(Base):
 
     trabajador = relationship("Trabajador")
 
+class NominaAjuste(Base):
+    """Ajustes de nómina: adelantos, bonos, deducciones administrativas (F-16 / RN-25)"""
+    __tablename__ = "trx_nomina_ajustes"
+    id = Column(Integer, primary_key=True, index=True)
+    nomina_semana_id = Column(Integer, ForeignKey("trx_nomina_semanal.id"), nullable=True)
+    trabajador_id = Column(Integer, ForeignKey("mae_trabajadores.id"), nullable=False)
+    tipo_ajuste = Column(String(30), nullable=False) # 'ADELANTO', 'BONO', 'DEDUCCION'
+    monto_rd = Column(Float, nullable=False)
+    motivo = Column(String(200), nullable=False)
+    autorizado_por = Column(String(100), nullable=False)
+    fecha = Column(DateTime, default=datetime.utcnow)
+
+    trabajador = relationship("Trabajador")
+
 class AuditoriaLog(Base):
     """
     Registro inalterable con encadenamiento criptográfico (Hash Chaining / RN-85 y RN-86).

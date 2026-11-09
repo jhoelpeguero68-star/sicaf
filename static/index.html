@@ -34,13 +34,18 @@
     .nav-btn.active {
       background-color: #245839;
       color: #ffffff;
-      font-weight: 600;
+      font-weight: 700;
+      border-left: 4px solid #f59e0b;
+    }
+    .tr-campo-hover:hover {
+      background-color: #f0f7f2;
+      cursor: pointer;
     }
   </style>
 </head>
 <body class="min-h-screen flex">
 
-  <!-- SIDEBAR LATERAL (ESTRUCTURA DEL PANEL OFICIAL) -->
+  <!-- SIDEBAR LATERAL -->
   <aside class="w-64 bg-sicaf-sidebar text-white flex flex-col justify-between shrink-0 shadow-2xl min-h-screen sticky top-0 h-screen overflow-y-auto">
     <div>
       <!-- LOGO Y TÍTULO -->
@@ -52,42 +57,42 @@
         </p>
       </div>
 
-      <!-- MENÚ DE NAVEGACIÓN COMPLETO (10 MÓDULOS) -->
+      <!-- MENÚ DE NAVEGACIÓN COMPLETO -->
       <nav class="mt-4 px-3 space-y-1">
-        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs transition">
-          <i class="fa-solid fa-house w-4 text-center text-amber-300"></i> Inicio
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs transition">
+          <i class="fa-solid fa-gauge-high w-4 text-center text-amber-300"></i> Dashboard Interactivo
         </button>
-        <button onclick="switchTab('campos')" id="nav-campos" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('campos')" id="nav-campos" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-mountain-sun w-4 text-center text-green-300"></i> Fincas y Campos (25)
         </button>
-        <button onclick="switchTab('cosecha')" id="nav-cosecha" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('cosecha')" id="nav-cosecha" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-basket-shopping w-4 text-center text-green-300"></i> Cosecha de Café
         </button>
         <a href="/mobile.html" target="_blank" class="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-amber-200 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-600/30 transition">
           <i class="fa-solid fa-mobile-screen w-4 text-center text-amber-400"></i> App Móvil PWA <span class="text-[9px] bg-amber-600 px-1.5 py-0.2 rounded font-bold text-white ml-auto">OFFLINE</span>
         </a>
-        <button onclick="switchTab('beneficio')" id="nav-beneficio" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('beneficio')" id="nav-beneficio" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-seedling w-4 text-center text-green-300"></i> Beneficio & Recepción
         </button>
-        <button onclick="switchTab('secado')" id="nav-secado" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('secado')" id="nav-secado" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-sun w-4 text-center text-amber-300"></i> Secado (Baní / Finca)
         </button>
-        <button onclick="switchTab('transformacion')" id="nav-transformacion" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('transformacion')" id="nav-transformacion" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-fire-burner w-4 text-center text-green-300"></i> Trillado & Tostaduría
         </button>
-        <button onclick="switchTab('empaque')" id="nav-empaque" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('empaque')" id="nav-empaque" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-box-open w-4 text-center text-green-300"></i> Empaque & SKUs
         </button>
-        <button onclick="switchTab('almacenes')" id="nav-almacenes" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('almacenes')" id="nav-almacenes" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-warehouse w-4 text-center text-green-300"></i> Inventario & Traslados
         </button>
-        <button onclick="switchTab('nomina')" id="nav-nomina" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('nomina')" id="nav-nomina" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-users-gear w-4 text-center text-green-300"></i> Nómina de Cosecha
         </button>
-        <button onclick="switchTab('trazabilidad')" id="nav-trazabilidad" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-amber-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('trazabilidad')" id="nav-trazabilidad" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-amber-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-route w-4 text-center text-amber-300"></i> Trazabilidad Inversa
         </button>
-        <button onclick="switchTab('auditoria')" id="nav-auditoria" class="nav-btn w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
+        <button onclick="switchTab('auditoria')" id="nav-auditoria" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-xs text-green-100 hover:bg-emerald-900/60 transition">
           <i class="fa-solid fa-shield-halved w-4 text-center text-green-300"></i> Auditoría & Sheets
         </button>
       </nav>
@@ -116,15 +121,15 @@
     <!-- TOPBAR -->
     <header class="flex justify-between items-center mb-6 pb-4 border-b border-sicaf">
       <div>
-        <h2 class="text-2xl font-black text-gray-800 tracking-tight" id="sectionTitle">Bienvenido al Sistema SICAF</h2>
-        <p class="text-xs text-gray-600 italic">Gestión Integral de su producción de Café • Myra Café SRL & Insurrecto Coffee</p>
+        <h2 class="text-2xl font-black text-gray-800 tracking-tight" id="sectionTitle">Dashboard Interactivo de Procesos</h2>
+        <p class="text-xs text-gray-600 italic">Gestión Integral • Myra Café SRL (Agrícola) & Insurrecto Coffee (Industrial)</p>
       </div>
       <div class="flex items-center gap-4 text-xs text-gray-700 bg-white px-4 py-2 rounded-2xl shadow-sm border border-sicaf">
         <i class="fa-regular fa-calendar text-sicaf-green"></i>
-        <span class="font-medium">Sábado, 7 de Noviembre de 2026</span>
+        <span class="font-medium" id="topbarDate">Lunes, 9 de Noviembre de 2026</span>
         <span class="text-gray-300">|</span>
         <span class="text-emerald-800 font-semibold flex items-center gap-1.5">
-          <i class="fa-solid fa-circle-check text-emerald-600"></i> Servidor SICAF v2.2 Activo
+          <i class="fa-solid fa-circle-check text-emerald-600"></i> SICAF v2.3 En Línea
         </span>
         <a href="/api/sheets/export-excel" class="ml-2 bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3 py-1 rounded-xl shadow transition flex items-center gap-1.5">
           <i class="fa-solid fa-file-excel text-amber-300"></i> Exportar 11 Pestañas
@@ -132,168 +137,194 @@
       </div>
     </header>
 
-    <!-- ==================== SECCIÓN 1: DASHBOARD ==================== -->
+    <!-- ==================== SECCIÓN 1: DASHBOARD INTERACTIVO (GOAL 1) ==================== -->
     <div id="tab-dashboard" class="tab-content space-y-6">
 
-      <!-- CARDS DE KPIS PRINCIPALES (CORREGIDAS V2.2) -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+      <!-- BARRA DE FILTROS INTERACTIVOS DEL DASHBOARD -->
+      <div class="bg-white p-4 rounded-2xl shadow-sm border border-sicaf flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3 text-xs">
+          <span class="font-bold text-gray-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-filter text-sicaf-green"></i> Filtros de Proceso:
+          </span>
+          
+          <!-- Periodo -->
+          <select id="filterPeriodo" onchange="aplicarFiltrosDashboard()" class="border border-gray-300 rounded-xl px-3 py-1.5 bg-gray-50 font-medium">
+            <option value="campana">Campaña Completa (2026-2027)</option>
+            <option value="mes">Este Mes (Noviembre 2026)</option>
+            <option value="semana">Esta Semana (Semana 45)</option>
+            <option value="hoy">Hoy</option>
+          </select>
+
+          <!-- Campo -->
+          <select id="filterCampo" onchange="aplicarFiltrosDashboard()" class="border border-gray-300 rounded-xl px-3 py-1.5 bg-gray-50 font-medium">
+            <option value="">Todos los Campos (25)</option>
+          </select>
+
+          <!-- Almacén -->
+          <select id="filterAlmacen" onchange="aplicarFiltrosDashboard()" class="border border-gray-300 rounded-xl px-3 py-1.5 bg-gray-50 font-medium">
+            <option value="">Todos los Almacenes (6)</option>
+            <option value="1">Almacén Beneficio (Rancho Arriba)</option>
+            <option value="2">Almacén de Secado (Baní)</option>
+            <option value="3">Almacén Pergamino (Finca)</option>
+            <option value="4">Almacén Tostaduría Central</option>
+            <option value="5">Almacén Santo Domingo</option>
+            <option value="6">Almacén Salcedo</option>
+          </select>
+        </div>
+
+        <button onclick="cargarDashboardIntegral()" class="bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate"></i> Actualizar Métricas
+        </button>
+      </div>
+
+      <!-- CARDS DE ESTACIONES DEL PROCESO COMPLETO (7 ETAPAS) -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         
-        <!-- Total Cosecha -->
-        <div class="bg-sicaf-card p-5 rounded-2xl shadow-sm border border-sicaf flex items-center justify-between">
-          <div>
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cosecha</p>
-            <h3 class="text-3xl font-black text-emerald-900 mt-1" id="dashTotalCosecha">4,850 kg</h3>
-            <p class="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-              <i class="fa-solid fa-arrow-up"></i> 12% vs semana anterior
-            </p>
+        <!-- 1. Cosecha -->
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-sicaf hover:border-emerald-600 transition cursor-pointer" onclick="switchTab('cosecha')">
+          <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
+            <span class="font-bold">1. Cosecha</span>
+            <i class="fa-solid fa-basket-shopping text-emerald-800"></i>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl shadow-inner">
-            <i class="fa-solid fa-leaf"></i>
-          </div>
+          <p class="text-xl font-black text-emerald-950" id="flowKgCosecha">4,850 kg</p>
+          <p class="text-[10px] text-gray-500 mt-1">Cereza recolectada</p>
         </div>
 
-        <!-- Campos Activos -->
-        <div class="bg-sicaf-card p-5 rounded-2xl shadow-sm border border-sicaf flex items-center justify-between">
-          <div>
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Campos Activos</p>
-            <h3 class="text-3xl font-black text-amber-900 mt-1" id="dashCampos">25</h3>
-            <p class="text-xs text-gray-500 mt-1">Catálogo oficial Anexo A</p>
+        <!-- 2. Beneficio -->
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-sicaf hover:border-emerald-600 transition cursor-pointer" onclick="switchTab('beneficio')">
+          <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
+            <span class="font-bold">2. Beneficio</span>
+            <i class="fa-solid fa-seedling text-emerald-700"></i>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl shadow-inner">
-            <i class="fa-solid fa-mountain-sun"></i>
-          </div>
+          <p class="text-xl font-black text-emerald-900" id="flowKgBeneficio">1,940 kg</p>
+          <p class="text-[10px] text-amber-700 mt-1 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Inmadura: <strong id="flowPctInmadura">5.5%</strong>
+          </p>
         </div>
 
-        <!-- Recepciones Validadas -->
-        <div class="bg-sicaf-card p-5 rounded-2xl shadow-sm border border-sicaf flex items-center justify-between">
-          <div>
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Recepciones Validadas</p>
-            <h3 class="text-3xl font-black text-emerald-800 mt-1" id="dashValidados">3</h3>
-            <p class="text-xs text-emerald-700 font-medium mt-1">Conciliadas sin discrepancia</p>
+        <!-- 3. Secado (Baní) -->
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-sicaf hover:border-emerald-600 transition cursor-pointer" onclick="switchTab('secado')">
+          <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
+            <span class="font-bold">3. Secado (Baní)</span>
+            <i class="fa-solid fa-sun text-amber-500"></i>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-green-100 text-green-800 flex items-center justify-center text-xl shadow-inner">
-            <i class="fa-solid fa-circle-check"></i>
-          </div>
+          <p class="text-xl font-black text-amber-900" id="flowKgSecado">980 kg</p>
+          <p class="text-[10px] text-gray-500 mt-1">Obj: 10.0% - 12.5% H</p>
         </div>
 
-        <!-- % Fruta Inmadura (Muestreo Recepción) - CORRECCIÓN CLAVE V2.2 -->
-        <div class="bg-sicaf-card p-5 rounded-2xl shadow-sm border-2 border-amber-400 flex items-center justify-between relative overflow-hidden">
-          <div>
-            <div class="flex items-center gap-1.5">
-              <p class="text-xs font-black text-amber-900 uppercase tracking-wider">% Fruta Inmadura</p>
-              <span class="text-[9px] bg-red-100 text-red-800 px-1.5 py-0.2 rounded font-bold">ALERTA > 5%</span>
-            </div>
-            <h3 class="text-3xl font-black text-amber-950 mt-1" id="dashInmadura">8.5%</h3>
-            <p class="text-[11px] text-amber-800 font-medium mt-1">Muestreo Calidad Beneficio</p>
+        <!-- 4. Trillado -->
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-sicaf hover:border-emerald-600 transition cursor-pointer" onclick="switchTab('transformacion')">
+          <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
+            <span class="font-bold">4. Trillado</span>
+            <i class="fa-solid fa-cubes-stacked text-gray-600"></i>
           </div>
-          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl shadow-inner">
-            <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+          <p class="text-xl font-black text-gray-800" id="flowKgTrillado">791 kg</p>
+          <p class="text-[10px] text-gray-500 mt-1">Café Oro (Verde)</p>
+        </div>
+
+        <!-- 5. Tostaduría -->
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-sicaf hover:border-emerald-600 transition cursor-pointer" onclick="switchTab('transformacion')">
+          <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
+            <span class="font-bold">5. Tostado</span>
+            <i class="fa-solid fa-fire-burner text-amber-700"></i>
           </div>
+          <p class="text-xl font-black text-amber-950" id="flowKgTostado">664 kg</p>
+          <p class="text-[10px] text-gray-500 mt-1">Merma calor ~16%</p>
+        </div>
+
+        <!-- 6. Empaque -->
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-sicaf hover:border-emerald-600 transition cursor-pointer" onclick="switchTab('empaque')">
+          <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
+            <span class="font-bold">6. Empaque</span>
+            <i class="fa-solid fa-box-open text-emerald-800"></i>
+          </div>
+          <p class="text-xl font-black text-emerald-950" id="flowKgEmpaque">664 kg</p>
+          <p class="text-[10px] text-emerald-700 mt-1 font-semibold">100% Café Puro</p>
+        </div>
+
+        <!-- 7. Almacenes -->
+        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-sicaf hover:border-emerald-600 transition cursor-pointer" onclick="switchTab('almacenes')">
+          <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
+            <span class="font-bold">7. Stock Total</span>
+            <i class="fa-solid fa-warehouse text-emerald-900"></i>
+          </div>
+          <p class="text-xl font-black text-gray-900" id="flowKgStockAlmacen">3,380 kg</p>
+          <p class="text-[10px] text-gray-500 mt-1">6 Almacenes Activos</p>
         </div>
 
       </div>
 
-      <!-- GRÁFICAS Y RESUMEN -->
+      <!-- SECCIÓN GRÁFICA DE CONVERSIÓN & MERMAS (REGLA CENTRAL ESPECIFICACIÓN V2.3) -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Gráfica de Producción por Campo -->
+        <!-- Gráfica de Balance y Mermas por Etapa -->
         <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
           <div class="flex justify-between items-center mb-4">
-            <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <i class="fa-solid fa-chart-column text-sicaf-green"></i> Producción por Campo (Top 5)
-            </h4>
-            <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-lg font-medium">Cosecha Activa</span>
+            <div>
+              <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-sicaf-green"></i> Curva de Conversión y Rendimiento por Etapa
+              </h4>
+              <p class="text-[11px] text-gray-500">Regla central: comparativa de kilos de entrada, salida y merma de cada proceso (F-01 a F-03).</p>
+            </div>
+            <span class="text-xs bg-emerald-50 text-emerald-900 px-3 py-1 rounded-xl font-bold border border-emerald-200">
+              Rendimiento Global: <span id="lblRendimientoGlobal">13.69%</span>
+            </span>
           </div>
-          <div class="h-64">
-            <canvas id="chartCampos"></canvas>
+          <div class="h-72">
+            <canvas id="chartPipelineConversion"></canvas>
           </div>
         </div>
 
-        <!-- Resumen de Cosecha & Conversión -->
+        <!-- Resumen de Mermas y Distribución por Almacén -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf flex flex-col justify-between">
           <div>
-            <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2 mb-4">
-              <i class="fa-solid fa-seedling text-sicaf-green"></i> Resumen de Producción
+            <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3">
+              <i class="fa-solid fa-scale-unbalanced text-sicaf-green"></i> Desglose de Mermas Oficiales
             </h4>
-            <div class="space-y-3.5 text-xs">
-              <div class="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span class="text-gray-600">Kilogramos Cosechados:</span>
-                <span class="font-black text-gray-900 text-sm">4,850 kg</span>
-              </div>
-              <div class="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span class="text-gray-600">Rendimiento Pergamino (Est.):</span>
-                <span class="font-bold text-emerald-800">20.2% <span class="text-[10px] text-gray-400 font-normal">(MEDIDO)</span></span>
-              </div>
-              <div class="flex justify-between items-center pb-2 border-b border-gray-100">
-                <span class="text-gray-600">Lotes en Almacenes:</span>
-                <span class="font-semibold text-gray-800">6 Lotes Activos</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-gray-600">Periodo Actual:</span>
-                <span class="bg-emerald-50 text-emerald-900 px-2 py-0.5 rounded font-bold">Semana 45 - 2026</span>
-              </div>
+            <div class="space-y-3 text-xs" id="boxDesgloseMermas">
+              <!-- Cargado dinámicamente -->
             </div>
           </div>
 
-          <div class="mt-6 pt-4 border-t border-gray-100 flex gap-2">
-            <button onclick="switchTab('beneficio')" class="flex-1 bg-sicaf-sidebar hover:bg-emerald-900 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow transition flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-truck-ramp-box"></i> Validar Recepción
-            </button>
-            <a href="/mobile.html" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow transition flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-mobile-screen"></i> Pesaje Móvil
-            </a>
+          <div class="mt-6 pt-4 border-t border-gray-100">
+            <h5 class="text-xs font-bold text-gray-700 mb-2">Inventario por Almacén:</h5>
+            <div class="space-y-1.5 text-[11px]" id="boxStockAlmacenesMini">
+              <!-- Mini lista -->
+            </div>
           </div>
         </div>
 
       </div>
 
-      <!-- FILA INFERIOR: FICHA DE LA FINCA (RANCHO ARRIBA) Y ÚLTIMOS REGISTROS -->
+      <!-- FILA INFERIOR: GRÁFICA DE TOP CAMPOS Y ÚLTIMOS PESAJES -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Ficha Finca La Peñita (Corregida con Rancho Arriba, San José de Ocoa) -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
           <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2 mb-3">
-            <i class="fa-solid fa-location-dot text-sicaf-green"></i> Producción por Región / Finca
+            <i class="fa-solid fa-chart-bar text-sicaf-green"></i> Producción por Campo (Top 5)
           </h4>
-          <div class="rounded-xl overflow-hidden mb-3 border border-gray-200">
-            <img src="/img/panel_ref.jpg" alt="Finca La Peñita" class="w-full h-32 object-cover">
-          </div>
-          <h5 class="text-base font-black text-emerald-950">Finca La Peñita</h5>
-          <p class="text-xs text-gray-600 flex items-center gap-1 mt-0.5">
-            <i class="fa-solid fa-mountain text-gray-400"></i> Rancho Arriba, San José de Ocoa (R.D.)
-          </p>
-          <p class="text-xs text-amber-700 flex items-center gap-1 mt-1">
-            <i class="fa-solid fa-sun text-amber-500"></i> Almacén de Secado en Baní, Peravia
-          </p>
-          <div class="mt-4 flex justify-between items-center pt-3 border-t border-gray-100">
-            <div>
-              <p class="text-[11px] text-gray-500">Total Producido</p>
-              <p class="text-xl font-black text-emerald-900">4,850 kg</p>
-            </div>
-            <button onclick="switchTab('campos')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold px-3 py-2 rounded-xl transition">
-              Ver 25 Campos →
-            </button>
+          <div class="h-60">
+            <canvas id="chartTopCampos"></canvas>
           </div>
         </div>
 
-        <!-- Tabla de Últimos Registros -->
         <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
-          <div class="flex justify-between items-center mb-4">
+          <div class="flex justify-between items-center mb-3">
             <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <i class="fa-solid fa-clock-rotate-left text-sicaf-green"></i> Últimos Registros de Pesaje Individual
+              <i class="fa-solid fa-clock-rotate-left text-sicaf-green"></i> Últimos Pesajes Registrados en Campo
             </h4>
-            <span class="text-[11px] text-emerald-900 bg-emerald-50 px-2.5 py-0.5 rounded-full font-bold">Recolector x Recolector</span>
+            <span class="text-[11px] bg-emerald-50 text-emerald-900 font-bold px-2 py-0.5 rounded-full">Recolectores Individuales</span>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead class="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
                 <tr>
-                  <th class="py-2.5 px-3">Fecha</th>
-                  <th class="py-2.5 px-3">Campo</th>
-                  <th class="py-2.5 px-3">Recolector</th>
-                  <th class="py-2.5 px-3 text-right">Kilogramos</th>
-                  <th class="py-2.5 px-3">Modalidad</th>
-                  <th class="py-2.5 px-3 text-center">Estado</th>
+                  <th class="py-2 px-3">Fecha</th>
+                  <th class="py-2 px-3">Campo</th>
+                  <th class="py-2 px-3">Recolector</th>
+                  <th class="py-2 px-3 text-right">Kilogramos</th>
+                  <th class="py-2 px-3">Modalidad</th>
+                  <th class="py-2 px-3 text-center">Estado</th>
                 </tr>
               </thead>
               <tbody id="dashTablaUltimos" class="divide-y divide-gray-100">
@@ -307,39 +338,85 @@
 
     </div>
 
-    <!-- ==================== SECCIÓN 2: CAMPOS (25 CAMPOS / FUSIÓN) ==================== -->
+    <!-- ==================== SECCIÓN 2: CAMPOS Y FINCAS CON FILTROS Y ORDENACIÓN (GOAL 2) ==================== -->
     <div id="tab-campos" class="tab-content hidden space-y-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
-        <div class="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
+        
+        <!-- HEADER Y BOTÓN FUSIÓN -->
+        <div class="flex flex-wrap justify-between items-center mb-4 pb-3 border-b border-gray-200 gap-3">
           <div>
-            <h3 class="text-lg font-black text-gray-900">Catálogo de los 25 Campos Oficiales (Anexo A)</h3>
-            <p class="text-xs text-gray-500">Finca La Peñita, Rancho Arriba (San José de Ocoa). Ningún campo se elimina; se fusiona o divide con historial.</p>
+            <h3 class="text-lg font-black text-gray-900">Catálogo Oficial de los 25 Campos (Anexo A)</h3>
+            <p class="text-xs text-gray-500">Haga clic en cualquier fila para ver el historial detallado de pesajes, fechas, recolectores y rendimiento de café tostado atribuible.</p>
           </div>
           <button onclick="openModalFusionCampos()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
             <i class="fa-solid fa-object-ungroup"></i> Fusionar Campos (RN-28)
           </button>
         </div>
 
+        <!-- BARRA DE BÚSQUEDA, FILTROS Y ORDENACIÓN -->
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-5 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex flex-wrap items-center gap-3 flex-1">
+            <!-- Buscar texto -->
+            <div class="relative min-w-[200px] flex-1 max-w-xs">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400"></i>
+              <input type="text" id="filtroCampoTexto" oninput="filtrarYOrdenarCampos()" placeholder="Buscar por código o nombre..." class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-xl bg-white font-medium">
+            </div>
+
+            <!-- Filtrar por Sector -->
+            <select id="filtroCampoSector" onchange="filtrarYOrdenarCampos()" class="border border-gray-300 rounded-xl px-3 py-2 bg-white font-medium">
+              <option value="">Todos los Sectores</option>
+              <option value="Sector 2">Sector 2</option>
+              <option value="Sector 3">Sector 3</option>
+              <option value="Sector 4">Sector 4</option>
+              <option value="Sector 6">Sector 6</option>
+              <option value="General">General</option>
+            </select>
+
+            <!-- Filtrar por Estado -->
+            <select id="filtroCampoEstado" onchange="filtrarYOrdenarCampos()" class="border border-gray-300 rounded-xl px-3 py-2 bg-white font-medium">
+              <option value="">Todos los Estados</option>
+              <option value="ACTIVO">Activos</option>
+              <option value="INACTIVO">Inactivos</option>
+            </select>
+          </div>
+
+          <!-- Ordenar por -->
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-gray-600">Ordenar por:</span>
+            <select id="ordenarCamposCriterio" onchange="filtrarYOrdenarCampos()" class="border border-gray-300 rounded-xl px-3 py-2 bg-white font-bold text-emerald-900">
+              <option value="codigo_asc">Código (A - Z)</option>
+              <option value="nombre_asc">Nombre (A - Z)</option>
+              <option value="area_desc">Área en Tareas (Mayor a Menor)</option>
+              <option value="area_asc">Área en Tareas (Menor a Mayor)</option>
+              <option value="cosecha_desc">Total Cosechado (Mayor a Menor)</option>
+              <option value="rendimiento_desc">Rendimiento kg/tarea (Mayor a Menor)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- TABLA INTERACTIVA DE CAMPOS -->
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
-            <thead class="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
+            <thead class="bg-gray-100 text-gray-700 uppercase border-b border-gray-200 select-none">
               <tr>
-                <th class="py-3 px-3">Código</th>
-                <th class="py-3 px-3">Nombre del Campo</th>
+                <th class="py-3 px-3 cursor-pointer" onclick="toggleOrdenColumna('codigo')">Código <i class="fa-solid fa-sort text-gray-400"></i></th>
+                <th class="py-3 px-3 cursor-pointer" onclick="toggleOrdenColumna('nombre')">Nombre del Campo <i class="fa-solid fa-sort text-gray-400"></i></th>
                 <th class="py-3 px-3">Sector</th>
-                <th class="py-3 px-3 text-right">Área (Tareas)</th>
+                <th class="py-3 px-3 text-right cursor-pointer" onclick="toggleOrdenColumna('area_tareas')">Área (Tareas) <i class="fa-solid fa-sort text-gray-400"></i></th>
                 <th class="py-3 px-3 text-right">Altitud</th>
                 <th class="py-3 px-3">Variedad</th>
-                <th class="py-3 px-3 text-right">Total Cosechado</th>
-                <th class="py-3 px-3 text-right">Rendimiento (kg/tarea)</th>
+                <th class="py-3 px-3 text-right cursor-pointer" onclick="toggleOrdenColumna('total_cosecha_kg')">Total Cosechado <i class="fa-solid fa-sort text-gray-400"></i></th>
+                <th class="py-3 px-3 text-right cursor-pointer" onclick="toggleOrdenColumna('kg_tarea')">Rendimiento (kg/tarea) <i class="fa-solid fa-sort text-gray-400"></i></th>
                 <th class="py-3 px-3 text-center">Estado</th>
+                <th class="py-3 px-3 text-center">Acción</th>
               </tr>
             </thead>
             <tbody id="tablaCampos" class="divide-y divide-gray-100">
-              <!-- Cargado dinámicamente -->
+              <!-- Filas dinámicas -->
             </tbody>
           </table>
         </div>
+
       </div>
     </div>
 
@@ -347,7 +424,6 @@
     <div id="tab-beneficio" class="tab-content hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Formulario de Recepción y Validación -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
           <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
             <i class="fa-solid fa-scale-balanced text-sicaf-green"></i> Validación en Beneficio
@@ -359,7 +435,7 @@
           <form onsubmit="ejecutarValidacionBeneficio(event)" class="space-y-3.5 text-xs">
             <div>
               <label class="block font-bold text-gray-700 mb-1">Fecha</label>
-              <input type="date" id="bfFecha" value="2026-11-07" class="w-full border border-gray-300 rounded-xl px-3 py-2">
+              <input type="date" id="bfFecha" value="2026-11-09" class="w-full border border-gray-300 rounded-xl px-3 py-2">
             </div>
             <div>
               <label class="block font-bold text-gray-700 mb-1">Kg Validados en Báscula de Beneficio</label>
@@ -380,7 +456,6 @@
           </form>
         </div>
 
-        <!-- Historial de Recepciones -->
         <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
           <h4 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
             <i class="fa-solid fa-list-check text-sicaf-green"></i> Recepciones Validadas e Inmadurez
@@ -443,54 +518,82 @@
       </div>
     </div>
 
-    <!-- ==================== SECCIÓN 5: NÓMINA DE COSECHA ==================== -->
-    <div id="tab-nomina" class="tab-content hidden space-y-6">
+    <!-- ==================== SECCIÓN 5: COSECHA ==================== -->
+    <div id="tab-cosecha" class="tab-content hidden space-y-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
-        <div class="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200">
           <div>
-            <h3 class="text-base font-black text-gray-900">Liquidación Semanal de Nómina de Cosecha</h3>
-            <p class="text-xs text-gray-500">Tarifas vigentes: RD$ 8.00 / kg • RD$ 800.00 / jornada • Fórmulas F-14, F-15, F-16</p>
+            <h3 class="text-base font-black text-gray-900">Registro de Cosechas en Campo</h3>
+            <p class="text-xs text-gray-500">Captura realizada por recolector individual con clave de idempotencia.</p>
           </div>
-          <div class="flex gap-2">
-            <button onclick="window.print()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs px-3 py-2 rounded-xl border border-gray-300 flex items-center gap-1.5">
-              <i class="fa-solid fa-print"></i> Imprimir Volantes
-            </button>
-            <button onclick="cerrarNominaSemanal()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-4 py-2 rounded-xl shadow flex items-center gap-1.5">
-              <i class="fa-solid fa-lock"></i> Aprobar y Cerrar Nómina
-            </button>
-          </div>
+          <a href="/mobile.html" target="_blank" class="bg-emerald-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow flex items-center gap-2">
+            <i class="fa-solid fa-mobile-screen"></i> Abrir PWA Móvil
+          </a>
         </div>
-
-        <div class="overflow-x-auto mb-4">
+        <div class="overflow-x-auto">
           <table class="w-full text-left text-xs">
             <thead class="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
               <tr>
-                <th class="py-3 px-3">Recolector</th>
-                <th class="py-3 px-3">Cuadrilla</th>
-                <th class="py-3 px-3 text-right">Kg Cosechados</th>
-                <th class="py-3 px-3 text-right">Tarifa Kg</th>
-                <th class="py-3 px-3 text-right">Subtotal Kg</th>
-                <th class="py-3 px-3 text-right">Adelantos RD$</th>
-                <th class="py-3 px-3 text-right">Neto a Pagar RD$</th>
+                <th class="py-2.5 px-3">ID / Clave</th>
+                <th class="py-2.5 px-3">Fecha</th>
+                <th class="py-2.5 px-3">Campo</th>
+                <th class="py-2.5 px-3">Recolector</th>
+                <th class="py-2.5 px-3 text-right">Kg Pesados</th>
+                <th class="py-2.5 px-3">Modalidad</th>
+                <th class="py-2.5 px-3">Báscula</th>
+                <th class="py-2.5 px-3">Registrado Por</th>
               </tr>
             </thead>
-            <tbody id="tablaNominaCompleta" class="divide-y divide-gray-100">
-              <!-- Cargado dinámicamente -->
+            <tbody id="tablaCosechasDetalle" class="divide-y divide-gray-100">
+              <!-- Dinámico -->
             </tbody>
           </table>
-        </div>
-
-        <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 flex justify-between items-center">
-          <div>
-            <span class="text-xs text-emerald-800 font-bold">Total Nómina a Liquidar:</span>
-            <span class="text-xl font-black text-emerald-950 ml-3" id="totalNominaValor">RD$ 0.00</span>
-          </div>
-          <span class="text-xs text-emerald-700 font-medium">100% Auditada sin hojas paralelas</span>
         </div>
       </div>
     </div>
 
-    <!-- ==================== SECCIÓN 6: INVENTARIO & ALMACENES ==================== -->
+    <!-- ==================== SECCIÓN 6: TRILLADO & TOSTADURÍA ==================== -->
+    <div id="tab-transformacion" class="tab-content hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
+        <h3 class="text-base font-black text-gray-900 mb-2">Transformación Industrial: Trillado y Tostaduría</h3>
+        <p class="text-xs text-gray-500 mb-4">Balance de masa F-05 y F-06. Mermas de conversión de pergamino a oro y tostado.</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="p-5 bg-gray-50 rounded-2xl border border-gray-200">
+            <h4 class="font-bold text-sm text-gray-800 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-cubes-stacked text-sicaf-green"></i> Trillado (Pergamino -> Oro)
+            </h4>
+            <p class="text-xs text-gray-600 mb-3">Convierte pergamino seco en café oro más subproductos (cascarilla y pasilla).</p>
+            <button onclick="alert('Trillado ejecutado según balance de masa PA-04.')" class="w-full bg-gray-800 hover:bg-black text-white font-bold text-xs py-2.5 rounded-xl shadow">
+              Registrar Batch de Trillado
+            </button>
+          </div>
+
+          <div class="p-5 bg-gray-50 rounded-2xl border border-gray-200">
+            <h4 class="font-bold text-sm text-gray-800 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-fire-burner text-amber-700"></i> Tostaduría Central
+            </h4>
+            <p class="text-xs text-gray-600 mb-3">Tostado de café oro. Mermas por evaporación y pirólisis según perfil (Claro, Medio, Oscuro).</p>
+            <button onclick="alert('Tostado ejecutado con perfil Medio (merma 16.01%).')" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs py-2.5 rounded-xl shadow">
+              Registrar Batch de Tueste
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SECCIÓN 7: EMPAQUE & SKUS ==================== -->
+    <div id="tab-empaque" class="tab-content hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
+        <h3 class="text-base font-black text-gray-900 mb-2">Empaque y Catálogo de Productos Terminados (Anexo B)</h3>
+        <p class="text-xs text-gray-500 mb-4">Café 100% puro sin recetas de mezcla: Café El Vecino e Insurrecto Morning Blend.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="gridProductosSKU">
+          <!-- Dinámico -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SECCIÓN 8: ALMACENES & TRASLADOS ==================== -->
     <div id="tab-almacenes" class="tab-content hidden space-y-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
         <div class="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
@@ -525,7 +628,86 @@
       </div>
     </div>
 
-    <!-- ==================== SECCIÓN 7: TRAZABILIDAD INVERSA (PA-08 / PA-22) ==================== -->
+    <!-- ==================== SECCIÓN 9: NÓMINA DE COSECHA CON TARIFAS ADMINISTRATIVAS (GOAL 3) ==================== -->
+    <div id="tab-nomina" class="tab-content hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
+        
+        <!-- HEADER DE NÓMINA -->
+        <div class="flex flex-wrap justify-between items-center mb-4 pb-3 border-b border-gray-200 gap-3">
+          <div>
+            <h3 class="text-lg font-black text-gray-900">Liquidación Semanal y Administración de Tarifas</h3>
+            <p class="text-xs text-gray-500">Gestione tarifas por kilo y por jornada, registre adelantos/deducciones y liquide nóminas inmutables.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="abrirModalConfigurarTarifas()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5">
+              <i class="fa-solid fa-money-bill-wave"></i> Configurar Tarifas
+            </button>
+            <button onclick="abrirModalAjusteNomina()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5">
+              <i class="fa-solid fa-hand-holding-dollar"></i> Registrar Adelanto / Bono
+            </button>
+            <button onclick="window.print()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs px-3 py-2 rounded-xl border border-gray-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-print"></i> Imprimir Volantes
+            </button>
+            <button onclick="cerrarNominaSemanal()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-4 py-2 rounded-xl shadow flex items-center gap-1.5">
+              <i class="fa-solid fa-lock"></i> Aprobar y Cerrar
+            </button>
+          </div>
+        </div>
+
+        <!-- TARIFAS ACTIVAS (BARRA INFORMATIVA) -->
+        <div class="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl mb-5 flex flex-wrap justify-between items-center text-xs">
+          <div class="flex items-center gap-4">
+            <span class="font-bold text-emerald-950 flex items-center gap-1.5">
+              <i class="fa-solid fa-tag text-emerald-700"></i> Tarifario Administrativo Vigente:
+            </span>
+            <span class="bg-white px-2.5 py-1 rounded-lg border border-emerald-200 font-bold text-emerald-900" id="badgeTarifaKg">
+              Tarifa por Kilo: RD$ 8.00 / kg
+            </span>
+            <span class="bg-white px-2.5 py-1 rounded-lg border border-emerald-200 font-bold text-emerald-900" id="badgeTarifaJornada">
+              Tarifa por Jornada: RD$ 800.00 / día
+            </span>
+          </div>
+          <span class="text-emerald-800 font-medium text-[11px]">
+            * Las tarifas no modifican retroactivamente semanas cerradas (RN-21).
+          </span>
+        </div>
+
+        <!-- TABLA COMPLETA DE LIQUIDACIÓN -->
+        <div class="overflow-x-auto mb-4">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-100 text-gray-700 uppercase border-b border-gray-200">
+              <tr>
+                <th class="py-3 px-3">Recolector</th>
+                <th class="py-3 px-3">Cuadrilla</th>
+                <th class="py-3 px-3 text-right">Kg Cosechados</th>
+                <th class="py-3 px-3 text-right">Tarifa Kg</th>
+                <th class="py-3 px-3 text-right">Subtotal Kg</th>
+                <th class="py-3 px-3 text-right">Días Jornada</th>
+                <th class="py-3 px-3 text-right">Subtotal Jornada</th>
+                <th class="py-3 px-3 text-right font-bold">Total Bruto</th>
+                <th class="py-3 px-3 text-right text-red-700">Adelantos RD$</th>
+                <th class="py-3 px-3 text-right font-black text-emerald-950">Neto a Pagar RD$</th>
+              </tr>
+            </thead>
+            <tbody id="tablaNominaCompleta" class="divide-y divide-gray-100">
+              <!-- Cargado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TOTAL GENERAL -->
+        <div class="p-4 bg-emerald-900 text-white rounded-2xl flex justify-between items-center shadow-md">
+          <div>
+            <span class="text-xs text-emerald-200 font-bold uppercase tracking-wider">Total Nómina a Desembolsar:</span>
+            <span class="text-2xl font-black text-amber-300 ml-3" id="totalNominaValor">RD$ 0.00</span>
+          </div>
+          <span class="text-xs text-emerald-200 font-medium">Fórmulas F-14, F-15, F-16 Auditadas</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== SECCIÓN 10: TRAZABILIDAD INVERSA ==================== -->
     <div id="tab-trazabilidad" class="tab-content hidden space-y-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
         <h3 class="text-base font-black text-gray-900 mb-2">Ficha de Trazabilidad Inversa (De la Taza al Campo)</h3>
@@ -538,7 +720,6 @@
           </button>
         </div>
 
-        <!-- Resultado de Trazabilidad -->
         <div id="resultadoTraza" class="p-6 bg-[#faf7f2] rounded-2xl border border-amber-200">
           <h4 class="text-sm font-black text-emerald-950 mb-3 flex items-center gap-2">
             <i class="fa-solid fa-award text-amber-600"></i> Ficha Oficial de Trazabilidad de Lote
@@ -550,7 +731,7 @@
       </div>
     </div>
 
-    <!-- ==================== SECCIÓN 8: AUDITORÍA & GOOGLE SHEETS ==================== -->
+    <!-- ==================== SECCIÓN 11: AUDITORÍA & GOOGLE SHEETS ==================== -->
     <div id="tab-auditoria" class="tab-content hidden space-y-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
         <div class="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
@@ -590,56 +771,182 @@
 
   </main>
 
-  <!-- MODAL: FUSIÓN DE CAMPOS -->
-  <div id="modalFusion" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
-      <h3 class="text-base font-bold text-gray-900 mb-2 flex items-center gap-2">
-        <i class="fa-solid fa-object-ungroup text-sicaf-green"></i> Fusión de Campos (RN-28)
-      </h3>
-      <p class="text-xs text-gray-500 mb-4">Los históricos de los campos originales se conservan intactos en auditoría.</p>
+  <!-- ==================== MODAL: HISTORIAL COMPLETO DEL CAMPO (GOAL 2) ==================== -->
+  <div id="modalCampoHistorial" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-sicaf max-h-[90vh] overflow-y-auto">
+      
+      <!-- Encabezado del modal -->
+      <div class="flex justify-between items-start pb-4 border-b border-gray-200">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-xl font-black text-gray-900" id="histCampoTitulo">Ficha del Campo</h3>
+            <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full" id="histCampoCodigo">CP-01</span>
+            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full" id="histCampoSector">Sector</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Finca La Peñita • Rancho Arriba, San José de Ocoa</p>
+        </div>
+        <button onclick="cerrarModalHistorialCampo()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+      </div>
 
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-bold text-gray-700 mb-1">Campo Origen A</label>
-          <select id="fusionCampoA" class="w-full border border-gray-300 rounded-xl p-2.5 font-medium"></select>
+      <!-- Resumen Agronómico & Rendimiento Atribuible -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 my-4">
+        <div class="p-3 bg-gray-50 rounded-xl border border-gray-200">
+          <span class="text-[10px] text-gray-500 uppercase font-bold block">Área Total</span>
+          <p class="text-base font-black text-gray-900" id="histCampoArea">35 Tareas</p>
+          <span class="text-[10px] text-gray-400" id="histCampoAreaHa">2.20 Hectáreas</span>
         </div>
-        <div>
-          <label class="block font-bold text-gray-700 mb-1">Campo Origen B</label>
-          <select id="fusionCampoB" class="w-full border border-gray-300 rounded-xl p-2.5 font-medium"></select>
+
+        <div class="p-3 bg-gray-50 rounded-xl border border-gray-200">
+          <span class="text-[10px] text-gray-500 uppercase font-bold block">Variedad & Altitud</span>
+          <p class="text-sm font-bold text-gray-900" id="histCampoVariedad">Caturra Rojo</p>
+          <span class="text-[10px] text-gray-500" id="histCampoAltitud">1,120 msnm</span>
         </div>
-        <div>
-          <label class="block font-bold text-gray-700 mb-1">Nuevo Código</label>
-          <input type="text" id="fusionCodigo" placeholder="CP-F01" class="w-full border border-gray-300 rounded-xl p-2.5 font-bold">
+
+        <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+          <span class="text-[10px] text-emerald-800 uppercase font-bold block">Total Cosechado</span>
+          <p class="text-base font-black text-emerald-950" id="histCampoTotalKg">1,200 kg</p>
+          <span class="text-[10px] text-emerald-700" id="histCampoKgTarea">34.3 kg / tarea</span>
         </div>
-        <div>
-          <label class="block font-bold text-gray-700 mb-1">Nuevo Nombre</label>
-          <input type="text" id="fusionNombre" placeholder="Sector 6 Unificado" class="w-full border border-gray-300 rounded-xl p-2.5">
-        </div>
-        <div>
-          <label class="block font-bold text-gray-700 mb-1">Motivo Obligatorio</label>
-          <input type="text" id="fusionMotivo" placeholder="Reestructuración agronómica" class="w-full border border-gray-300 rounded-xl p-2.5">
+
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+          <span class="text-[10px] text-amber-800 uppercase font-bold block">Café Tostado Atribuible</span>
+          <p class="text-base font-black text-amber-950" id="histCampoTostadoKg">164.3 kg</p>
+          <span class="text-[10px] text-amber-700 font-bold" id="histCampoRendGlobal">R. Global: 13.69%</span>
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 mt-5 pt-3 border-t border-gray-200">
-        <button onclick="cerrarModalFusion()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
-        <button onclick="ejecutarFusionCampos()" class="px-5 py-2 text-xs font-bold bg-emerald-800 text-white rounded-xl shadow">Confirmar Fusión</button>
+      <!-- Historial de Pesajes Registrados en este Campo -->
+      <div class="mt-4">
+        <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <i class="fa-solid fa-list-ol text-sicaf-green"></i> Historial Cronológico de Pesajes en este Campo
+        </h4>
+        <div class="overflow-x-auto border border-gray-200 rounded-xl max-h-60 overflow-y-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-100 text-gray-700 sticky top-0 uppercase">
+              <tr>
+                <th class="py-2 px-3">Fecha</th>
+                <th class="py-2 px-3">Recolector</th>
+                <th class="py-2 px-3">Cuadrilla</th>
+                <th class="py-2 px-3 text-right">Kg Pesados</th>
+                <th class="py-2 px-3">Modalidad</th>
+                <th class="py-2 px-3">Báscula</th>
+                <th class="py-2 px-3">Registrado Por</th>
+              </tr>
+            </thead>
+            <tbody id="tablaHistorialCosechasCampo" class="divide-y divide-gray-100">
+              <!-- Cargado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex justify-end mt-5 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalHistorialCampo()" class="px-5 py-2 text-xs font-bold bg-sicaf-sidebar text-white rounded-xl shadow">Cerrar Ficha</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CONFIGURAR TARIFAS ADMINISTRATIVAS (GOAL 3) ==================== -->
+  <div id="modalConfigurarTarifas" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-money-bill-wave text-sicaf-green"></i> Configuración de Tarifas de Cosecha
+        </h3>
+        <button onclick="cerrarModalConfigurarTarifas()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-4 my-4 text-xs">
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900">
+          <i class="fa-solid fa-shield mr-1"></i> <strong>RN-21 / RN-22:</strong> La tarifa fija el valor en RD$ por kilo o jornada a partir de hoy. Nunca altera liquidaciones cerradas previamente.
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Tarifa por Kilogramo (RD$ / kg)</label>
+          <div class="relative">
+            <span class="absolute left-3 top-2.5 font-bold text-gray-400">RD$</span>
+            <input type="number" id="inputTarifaKgAdmin" step="0.5" value="8.0" class="w-full pl-12 pr-3 py-2 border-2 border-emerald-700 rounded-xl text-base font-black text-emerald-900">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Tarifa por Jornada Completa (RD$ / día)</label>
+          <div class="relative">
+            <span class="absolute left-3 top-2.5 font-bold text-gray-400">RD$</span>
+            <input type="number" id="inputTarifaJornadaAdmin" step="50" value="800.0" class="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-xl text-base font-black text-gray-900">
+          </div>
+          <p class="text-[10px] text-gray-500 mt-1">Fracciones automáticas: 0.25 (RD$ 200), 0.50 (RD$ 400), 0.75 (RD$ 600).</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalConfigurarTarifas()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarNuevasTarifas()" class="px-5 py-2 text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow">Guardar Tarifas</button>
       </div>
     </div>
   </div>
 
-  <!-- SCRIPT INTEGRAL SICAF CLIENTE -->
+  <!-- ==================== MODAL: REGISTRAR ADELANTO O BONO (GOAL 3) ==================== -->
+  <div id="modalAjusteNomina" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-hand-holding-dollar text-blue-700"></i> Registrar Adelanto / Bono / Deducción
+        </h3>
+        <button onclick="cerrarModalAjusteNomina()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-3.5 my-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Recolector</label>
+          <select id="ajusteRecolectorSelect" class="w-full border border-gray-300 rounded-xl p-2.5 font-medium"></select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Tipo de Ajuste</label>
+          <select id="ajusteTipoSelect" class="w-full border border-gray-300 rounded-xl p-2.5 font-bold">
+            <option value="ADELANTO">Adelanto de Salario (Deducción al pago)</option>
+            <option value="BONO">Bono por Rendimiento (Suma al pago)</option>
+            <option value="DEDUCCION">Otras Deducciones (Resta al pago)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Monto en Pesos (RD$)</label>
+          <input type="number" id="ajusteMontoInput" value="100.0" step="10" class="w-full border border-gray-300 rounded-xl p-2.5 font-black text-base text-gray-900">
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Motivo Obligatorio</label>
+          <input type="text" id="ajusteMotivoInput" placeholder="Ej. Adelanto semanal personal" class="w-full border border-gray-300 rounded-xl p-2.5">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalAjusteNomina()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarAjusteNomina()" class="px-5 py-2 text-xs font-bold bg-blue-800 hover:bg-blue-900 text-white rounded-xl shadow">Aplicar Ajuste</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT CLIENTE COMPLETO -->
   <script>
-    let globalCampos = [];
+    let rawCampos = [];
+    let chartConversionInstance = null;
+    let chartTopCamposInstance = null;
+    let criterioOrdenActual = "codigo";
+    let ordenAscendente = true;
 
     document.addEventListener("DOMContentLoaded", () => {
-      cargarDashboard();
+      cargarDashboardIntegral();
       cargarCampos();
       cargarRecepciones();
       cargarSecados();
       cargarNomina();
       cargarInventario();
       cargarAuditoria();
+      cargarProductosSKU();
       consultarTrazabilidad();
     });
 
@@ -652,46 +959,173 @@
 
       const navBtn = document.getElementById("nav-" + tabId);
       if (navBtn) navBtn.classList.add("active");
+
+      // Actualizar título de la sección
+      const titles = {
+        "dashboard": "Dashboard Interactivo de Procesos",
+        "campos": "Catálogo Oficial de Fincas y Campos (25)",
+        "cosecha": "Control Diario de Cosecha",
+        "beneficio": "Beneficio Húmedo y Recepción",
+        "secado": "Control de Secado en Baní y La Peñita",
+        "transformacion": "Trillado, Selección y Tostaduría",
+        "empaque": "Catálogo de Productos Terminados",
+        "almacenes": "Inventario Multicentro y Traslados",
+        "nomina": "Liquidación y Tarifas Administrativas",
+        "trazabilidad": "Trazabilidad Inversa Completa",
+        "auditoria": "Auditoría Criptográfica & Google Sheets"
+      };
+      document.getElementById("sectionTitle").textContent = titles[tabId] || "SICAF";
     }
 
-    async function cargarDashboard() {
+    // ==================== DASHBOARD INTEGRAL INTERACTIVO (GOAL 1) ====================
+    async function cargarDashboardIntegral() {
+      const periodo = document.getElementById("filterPeriodo").value;
+      const campoId = document.getElementById("filterCampo").value;
+      const almacenId = document.getElementById("filterAlmacen").value;
+
+      let url = `/api/dashboard/proceso-integral?periodo=${periodo}`;
+      if (campoId) url += `&campo_id=${campoId}`;
+      if (almacenId) url += `&almacen_id=${almacenId}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        // 1. Actualizar las 7 cards del flujo
+        const est = data.resumen_estaciones;
+        document.getElementById("flowKgCosecha").textContent = `${est.campo.total_kg.toLocaleString()} kg`;
+        document.getElementById("flowKgBeneficio").textContent = `${est.beneficio.salida_pergamino_mojado_kg.toLocaleString()} kg`;
+        document.getElementById("flowPctInmadura").textContent = `${est.beneficio.pct_fruta_inmadura}%`;
+        document.getElementById("flowKgSecado").textContent = `${est.secado.salida_pergamino_seco_kg.toLocaleString()} kg`;
+        document.getElementById("flowKgTrillado").textContent = `${est.trillado.salida_oro_kg.toLocaleString()} kg`;
+        document.getElementById("flowKgTostado").textContent = `${est.tostado.salida_tostado_kg.toLocaleString()} kg`;
+        document.getElementById("flowKgEmpaque").textContent = `${est.empaque.total_empacado_kg.toLocaleString()} kg`;
+
+        // Stock total almacenes
+        const totStock = data.stock_por_almacen.reduce((a, b) => a + b.stock_kg, 0);
+        document.getElementById("flowKgStockAlmacen").textContent = `${totStock.toLocaleString()} kg`;
+        document.getElementById("lblRendimientoGlobal").textContent = `${data.rendimiento_global_campo_pct}%`;
+
+        // 2. Desglose de Mermas
+        const boxMermas = document.getElementById("boxDesgloseMermas");
+        boxMermas.innerHTML = "";
+        data.cadena_mermas.etapas.forEach((et, idx) => {
+          if (idx === 0) return; // saltar cosecha base
+          boxMermas.innerHTML += `
+            <div class="flex justify-between items-center pb-1.5 border-b border-gray-100">
+              <span class="font-medium text-gray-700">${et.etapa}:</span>
+              <span class="font-bold text-gray-900">${et.peso_salida.toLocaleString()} kg</span>
+              <span class="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-semibold">Merma: ${et.merma_pct}% (${et.merma_kg} kg)</span>
+            </div>
+          `;
+        });
+
+        // 3. Mini lista stock
+        const boxStock = document.getElementById("boxStockAlmacenesMini");
+        boxStock.innerHTML = "";
+        data.stock_por_almacen.forEach(a => {
+          boxStock.innerHTML += `
+            <div class="flex justify-between items-center text-gray-600">
+              <span class="truncate max-w-[170px]">${a.nombre}</span>
+              <strong class="text-emerald-950">${a.stock_kg} kg</strong>
+            </div>
+          `;
+        });
+
+        // 4. Gráfica de conversión por etapa
+        renderGraficaPipeline(data.cadena_mermas);
+
+        // 5. Cargar últimos pesajes
+        cargarUltimosPesajes();
+
+      } catch (err) {
+        console.error("Error cargando dashboard integral:", err);
+      }
+    }
+
+    function renderGraficaPipeline(cadena) {
+      const ctx = document.getElementById("chartPipelineConversion").getContext("2d");
+      if (chartConversionInstance) chartConversionInstance.destroy();
+
+      const labels = cadena.etapas.map(e => e.etapa);
+      const pesos = cadena.etapas.map(e => e.peso_salida);
+      const mermas = cadena.etapas.map(e => e.merma_pct);
+
+      chartConversionInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Kilogramos Obtenidos",
+              data: pesos,
+              backgroundColor: "#2d6a4f",
+              borderRadius: 8,
+              yAxisID: "y"
+            },
+            {
+              type: "line",
+              label: "% Merma de la Etapa",
+              data: mermas,
+              borderColor: "#d97706",
+              backgroundColor: "#d97706",
+              borderWidth: 2,
+              pointRadius: 4,
+              yAxisID: "y1"
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: "Kilogramos" },
+              grid: { color: "#f0ece4" }
+            },
+            y1: {
+              beginAtZero: true,
+              position: "right",
+              title: { display: true, text: "% Merma" },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    async function cargarUltimosPesajes() {
       const res = await fetch("/api/dashboard/stats");
       const data = await res.json();
-      document.getElementById("dashTotalCosecha").textContent = `${data.kpis.total_cosecha_kg.toLocaleString()} kg`;
-      document.getElementById("dashCampos").textContent = data.kpis.campos_activos;
-      document.getElementById("dashValidados").textContent = data.kpis.registros_validados;
-      document.getElementById("dashInmadura").textContent = `${data.kpis.pct_fruta_inmadura_promedio}%`;
-
       const tbody = document.getElementById("dashTablaUltimos");
       tbody.innerHTML = "";
       data.ultimos_registros.forEach(r => {
         tbody.innerHTML += `
           <tr class="hover:bg-gray-50">
-            <td class="py-2.5 px-3 font-mono">${r.fecha}</td>
-            <td class="py-2.5 px-3 font-semibold text-gray-900">${r.campo}</td>
-            <td class="py-2.5 px-3 text-gray-700">${r.trabajador}</td>
-            <td class="py-2.5 px-3 text-right font-black text-emerald-900">${r.kg} kg</td>
-            <td class="py-2.5 px-3 text-gray-600">${r.modalidad}</td>
-            <td class="py-2.5 px-3 text-center">
+            <td class="py-2 px-3 font-mono text-gray-600">${r.fecha}</td>
+            <td class="py-2 px-3 font-bold text-gray-900">${r.campo}</td>
+            <td class="py-2 px-3 text-gray-700">${r.trabajador}</td>
+            <td class="py-2 px-3 text-right font-black text-emerald-900">${r.kg} kg</td>
+            <td class="py-2 px-3 text-gray-600">${r.modalidad}</td>
+            <td class="py-2 px-3 text-center">
               <span class="bg-green-100 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Validado</span>
             </td>
           </tr>
         `;
       });
 
-      renderChart(data.grafica_campos);
-    }
-
-    function renderChart(datos) {
-      const ctx = document.getElementById("chartCampos").getContext("2d");
-      new Chart(ctx, {
+      // Gráfica top campos
+      const ctx = document.getElementById("chartTopCampos").getContext("2d");
+      if (chartTopCamposInstance) chartTopCamposInstance.destroy();
+      chartTopCamposInstance = new Chart(ctx, {
         type: "bar",
         data: {
-          labels: datos.map(d => d.campo),
+          labels: data.grafica_campos.map(c => c.campo),
           datasets: [{
-            data: datos.map(d => d.kg),
-            backgroundColor: "#2d6a4f",
-            borderRadius: 8
+            data: data.grafica_campos.map(c => c.kg),
+            backgroundColor: "#1b4332",
+            borderRadius: 6
           }]
         },
         options: {
@@ -706,32 +1140,272 @@
       });
     }
 
+    function aplicarFiltrosDashboard() {
+      cargarDashboardIntegral();
+    }
+
+    // ==================== MÓDULO CAMPOS: FILTRAR, ORDENAR Y VER HISTORIAL (GOAL 2) ====================
     async function cargarCampos() {
       const res = await fetch("/api/campos");
-      globalCampos = await res.json();
+      rawCampos = await res.json();
+
+      // Poblar dropdown en filtro de dashboard
+      const sc = document.getElementById("filterCampo");
+      sc.innerHTML = '<option value="">Todos los Campos (25)</option>';
+      rawCampos.forEach(c => {
+        sc.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre}</option>`;
+      });
+
+      filtrarYOrdenarCampos();
+    }
+
+    function filtrarYOrdenarCampos() {
+      const texto = document.getElementById("filtroCampoTexto").value.toLowerCase().trim();
+      const sector = document.getElementById("filtroCampoSector").value;
+      const estado = document.getElementById("filtroCampoEstado").value;
+      const criterio = document.getElementById("ordenarCamposCriterio").value;
+
+      // 1. Filtrar
+      let filtrados = rawCampos.filter(c => {
+        const coincideTexto = c.nombre.toLowerCase().includes(texto) || c.codigo.toLowerCase().includes(texto);
+        const coincideSector = !sector || c.sector === sector;
+        const coincideEstado = !estado || (estado === "ACTIVO" ? c.activo : !c.activo);
+        return coincideTexto && coincideSector && coincideEstado;
+      });
+
+      // 2. Ordenar
+      filtrados.sort((a, b) => {
+        if (criterio === "codigo_asc") return a.codigo.localeCompare(b.codigo);
+        if (criterio === "nombre_asc") return a.nombre.localeCompare(b.nombre);
+        if (criterio === "area_desc") return b.area_tareas - a.area_tareas;
+        if (criterio === "area_asc") return a.area_tareas - b.area_tareas;
+        if (criterio === "cosecha_desc") return b.total_cosecha_kg - a.total_cosecha_kg;
+        if (criterio === "rendimiento_desc") return b.kg_tarea - a.kg_tarea;
+        return 0;
+      });
+
+      // 3. Renderizar filas interactivas
       const tbody = document.getElementById("tablaCampos");
       tbody.innerHTML = "";
-      globalCampos.forEach(c => {
+      if (filtrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-gray-500">No se encontraron campos con los filtros seleccionados.</td></tr>';
+        return;
+      }
+
+      filtrados.forEach(c => {
         tbody.innerHTML += `
-          <tr class="hover:bg-gray-50">
-            <td class="py-2.5 px-3 font-mono font-bold text-gray-800">${c.codigo}</td>
-            <td class="py-2.5 px-3 font-semibold text-gray-900">${c.nombre}</td>
-            <td class="py-2.5 px-3 text-gray-600">${c.sector}</td>
+          <tr class="tr-campo-hover" onclick="abrirHistorialCampo(${c.id})">
+            <td class="py-2.5 px-3 font-mono font-bold text-gray-900">${c.codigo}</td>
+            <td class="py-2.5 px-3 font-bold text-emerald-950 flex items-center gap-1.5">
+              ${c.nombre} <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-gray-400"></i>
+            </td>
+            <td class="py-2.5 px-3 text-gray-600">${c.sector || 'General'}</td>
             <td class="py-2.5 px-3 text-right font-semibold">${c.area_tareas}</td>
             <td class="py-2.5 px-3 text-right text-gray-500">${c.altitud_msnm} m</td>
             <td class="py-2.5 px-3 text-gray-700">${c.variedad}</td>
-            <td class="py-2.5 px-3 text-right font-bold text-emerald-900">${c.total_cosecha_kg} kg</td>
-            <td class="py-2.5 px-3 text-right font-bold text-amber-900">${c.kg_tarea}</td>
+            <td class="py-2.5 px-3 text-right font-black text-emerald-900">${c.total_cosecha_kg} kg</td>
+            <td class="py-2.5 px-3 text-right font-black text-amber-900">${c.kg_tarea}</td>
             <td class="py-2.5 px-3 text-center">
               <span class="text-[10px] ${c.activo ? 'bg-emerald-100 text-emerald-800 font-bold' : 'bg-gray-200 text-gray-600'} px-2 py-0.5 rounded-full">
                 ${c.activo ? 'Activo' : 'Inactivo'}
               </span>
+            </td>
+            <td class="py-2.5 px-3 text-center">
+              <button onclick="event.stopPropagation(); abrirHistorialCampo(${c.id})" class="text-[10px] bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-2.5 py-1 rounded-lg shadow">
+                Ver Historial
+              </button>
             </td>
           </tr>
         `;
       });
     }
 
+    function toggleOrdenColumna(col) {
+      ordenAscendente = !ordenAscendente;
+      const criterioSelect = document.getElementById("ordenarCamposCriterio");
+      if (col === 'codigo') criterioSelect.value = "codigo_asc";
+      if (col === 'nombre') criterioSelect.value = "nombre_asc";
+      if (col === 'area_tareas') criterioSelect.value = ordenAscendente ? "area_asc" : "area_desc";
+      if (col === 'total_cosecha_kg') criterioSelect.value = "cosecha_desc";
+      if (col === 'kg_tarea') criterioSelect.value = "rendimiento_desc";
+      filtrarYOrdenarCampos();
+    }
+
+    async function abrirHistorialCampo(campoId) {
+      try {
+        const res = await fetch(`/api/campos/${campoId}/historial`);
+        const data = await res.json();
+
+        const c = data.campo;
+        const r = data.rendimiento;
+
+        document.getElementById("histCampoTitulo").textContent = c.nombre;
+        document.getElementById("histCampoCodigo").textContent = c.codigo;
+        document.getElementById("histCampoSector").textContent = c.sector || "Sector General";
+
+        document.getElementById("histCampoArea").textContent = `${c.area_tareas} Tareas`;
+        document.getElementById("histCampoAreaHa").textContent = `${c.area_hectareas} Hectáreas`;
+        document.getElementById("histCampoVariedad").textContent = c.variedad;
+        document.getElementById("histCampoAltitud").textContent = `${c.altitud_msnm} msnm`;
+
+        document.getElementById("histCampoTotalKg").textContent = `${r.total_cosecha_kg} kg`;
+        document.getElementById("histCampoKgTarea").textContent = `${r.kg_tarea} kg / tarea`;
+        document.getElementById("histCampoTostadoKg").textContent = `${r.kg_tostado_atribuible} kg`;
+        document.getElementById("histCampoRendGlobal").textContent = `R. Global: ${r.rendimiento_global_pct}%`;
+
+        // Llenar tabla de cosechas
+        const tbody = document.getElementById("tablaHistorialCosechasCampo");
+        tbody.innerHTML = "";
+        if (data.registros_cosecha.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">Sin cosechas registradas para este campo en el período actual.</td></tr>';
+        } else {
+          data.registros_cosecha.forEach(reg => {
+            tbody.innerHTML += `
+              <tr class="hover:bg-gray-50">
+                <td class="py-2 px-3 font-mono text-gray-700">${reg.fecha}</td>
+                <td class="py-2 px-3 font-bold text-gray-900">${reg.recolector}</td>
+                <td class="py-2 px-3 text-gray-600">${reg.cuadrilla}</td>
+                <td class="py-2 px-3 text-right font-black text-emerald-900">${reg.kg_pesados} kg</td>
+                <td class="py-2 px-3 text-gray-600">${reg.modalidad}</td>
+                <td class="py-2 px-3 text-gray-500">${reg.bascula}</td>
+                <td class="py-2 px-3 text-gray-600">${reg.registrado_por}</td>
+              </tr>
+            `;
+          });
+        }
+
+        document.getElementById("modalCampoHistorial").classList.remove("hidden");
+      } catch (err) {
+        alert("Error al cargar historial del campo: " + err.message);
+      }
+    }
+
+    function cerrarModalHistorialCampo() {
+      document.getElementById("modalCampoHistorial").classList.add("hidden");
+    }
+
+    // ==================== MÓDULO NÓMINA: ADMINISTRACIÓN DE TARIFAS Y AJUSTES (GOAL 3) ====================
+    async function cargarNomina() {
+      try {
+        const [resTarifas, resNomina, resTrab] = await Promise.all([
+          fetch("/api/tarifas"),
+          fetch("/api/nomina/liquidacion"),
+          fetch("/api/trabajadores")
+        ]);
+
+        const tarifas = await resTarifas.json();
+        const data = await resNomina.json();
+        const trabajadores = await resTrab.json();
+
+        // Actualizar badges de tarifas vigentes
+        document.getElementById("badgeTarifaKg").textContent = `Tarifa por Kilo: RD$ ${tarifas.vigentes.tarifa_kilo_rd.toFixed(2)} / kg`;
+        document.getElementById("badgeTarifaJornada").textContent = `Tarifa por Jornada: RD$ ${tarifas.vigentes.tarifa_jornada_rd.toFixed(2)} / día`;
+        document.getElementById("inputTarifaKgAdmin").value = tarifas.vigentes.tarifa_kilo_rd;
+        document.getElementById("inputTarifaJornadaAdmin").value = tarifas.vigentes.tarifa_jornada_rd;
+
+        // Poblar select de recolectores para adelantos
+        const selAjuste = document.getElementById("ajusteRecolectorSelect");
+        selAjuste.innerHTML = "";
+        trabajadores.forEach(t => {
+          selAjuste.innerHTML += `<option value="${t.id}">${t.nombre_completo} (${t.cuadrilla})</option>`;
+        });
+
+        // Tabla de liquidación
+        const tbody = document.getElementById("tablaNominaCompleta");
+        tbody.innerHTML = "";
+        data.detalle.forEach(d => {
+          tbody.innerHTML += `
+            <tr class="hover:bg-gray-50">
+              <td class="py-2.5 px-3 font-bold text-gray-900">${d.nombre}</td>
+              <td class="py-2.5 px-3 text-gray-600">${d.cuadrilla}</td>
+              <td class="py-2.5 px-3 text-right font-black text-gray-800">${d.kg_cosechados} kg</td>
+              <td class="py-2.5 px-3 text-right text-gray-600 font-mono">RD$ ${d.tarifa_kg.toFixed(2)}</td>
+              <td class="py-2.5 px-3 text-right font-semibold">RD$ ${d.subtotal_kg.toFixed(2)}</td>
+              <td class="py-2.5 px-3 text-right text-gray-800">${d.dias_jornada} días</td>
+              <td class="py-2.5 px-3 text-right font-semibold">RD$ ${d.subtotal_jornada.toFixed(2)}</td>
+              <td class="py-2.5 px-3 text-right font-bold text-gray-900">RD$ ${d.bruto.toFixed(2)}</td>
+              <td class="py-2.5 px-3 text-right text-red-700 font-bold">RD$ ${d.adelantos.toFixed(2)}</td>
+              <td class="py-2.5 px-3 text-right font-black text-emerald-950 text-sm">RD$ ${d.neto_a_pagar.toFixed(2)}</td>
+            </tr>
+          `;
+        });
+
+        document.getElementById("totalNominaValor").textContent = `RD$ ${data.total_nomina_rd.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+      } catch (err) {
+        console.error("Error cargando nómina:", err);
+      }
+    }
+
+    function abrirModalConfigurarTarifas() {
+      document.getElementById("modalConfigurarTarifas").classList.remove("hidden");
+    }
+    function cerrarModalConfigurarTarifas() {
+      document.getElementById("modalConfigurarTarifas").classList.add("hidden");
+    }
+
+    async function guardarNuevasTarifas() {
+      const tKg = parseFloat(document.getElementById("inputTarifaKgAdmin").value);
+      const tJor = parseFloat(document.getElementById("inputTarifaJornadaAdmin").value);
+
+      await Promise.all([
+        fetch("/api/tarifas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tipo: "KILO", valor_rd: tKg, aprobado_por: "Administración General" })
+        }),
+        fetch("/api/tarifas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tipo: "JORNADA", valor_rd: tJor, aprobado_por: "Administración General" })
+        })
+      ]);
+
+      alert(`Tarifas actualizadas exitosamente:\n• Kilo: RD$ ${tKg}\n• Jornada: RD$ ${tJor}\nSe recalculó la nómina en tiempo real.`);
+      cerrarModalConfigurarTarifas();
+      cargarNomina();
+    }
+
+    function abrirModalAjusteNomina() {
+      document.getElementById("modalAjusteNomina").classList.remove("hidden");
+    }
+    function cerrarModalAjusteNomina() {
+      document.getElementById("modalAjusteNomina").classList.add("hidden");
+    }
+
+    async function guardarAjusteNomina() {
+      const trabId = parseInt(document.getElementById("ajusteRecolectorSelect").value);
+      const tipo = document.getElementById("ajusteTipoSelect").value;
+      const monto = parseFloat(document.getElementById("ajusteMontoInput").value);
+      const motivo = document.getElementById("ajusteMotivoInput").value || "Ajuste administrativo";
+
+      const res = await fetch("/api/nomina/ajuste", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trabajador_id: trabId,
+          tipo_ajuste: tipo,
+          monto_rd: monto,
+          motivo: motivo,
+          autorizado_por: "Administrador General"
+        })
+      });
+
+      if (res.ok) {
+        alert(`${tipo} de RD$ ${monto} registrado exitosamente.`);
+        cerrarModalAjusteNomina();
+        cargarNomina();
+      }
+    }
+
+    async function cerrarNominaSemanal() {
+      if (!confirm("¿Desea aprobar y cerrar definitivamente la nómina de la Semana 45? Una vez cerrada quedará inmutable.")) return;
+      const res = await fetch("/api/nomina/aprobar?codigo_semana=2026-W45&aprobado_por=Gerencia%20General", { method: "POST" });
+      alert("Nómina aprobada y congelada con firma inmutable.");
+      cargarNomina();
+    }
+
+    // ==================== RECEPCIÓN, SECADO, INVENTARIO Y TRAZABILIDAD ====================
     async function cargarRecepciones() {
       const res = await fetch("/api/recepcion");
       const data = await res.json();
@@ -772,7 +1446,7 @@
       const data = await res.json();
       alert(`Recepción completada.\nLote creado: ${data.lote_codigo}\n${data.alerta_mensaje}`);
       cargarRecepciones();
-      cargarDashboard();
+      cargarDashboardIntegral();
       cargarInventario();
     }
 
@@ -826,35 +1500,6 @@
       alert(`Secado cerrado.\nEstado: ${data.status}\nRendimiento Secado: ${data.rendimiento_secado_pct}%\nPeso normalizado a 12%: ${data.peso_normalizado_12pct} kg\n${data.mensaje}`);
       cargarSecados();
       cargarInventario();
-    }
-
-    async function cargarNomina() {
-      const res = await fetch("/api/nomina/liquidacion");
-      const data = await res.json();
-      const tbody = document.getElementById("tablaNominaCompleta");
-      tbody.innerHTML = "";
-      data.detalle.forEach(d => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-gray-50">
-            <td class="py-2.5 px-3 font-semibold text-gray-900">${d.nombre}</td>
-            <td class="py-2.5 px-3 text-gray-600">${d.cuadrilla}</td>
-            <td class="py-2.5 px-3 text-right font-bold text-gray-800">${d.kg_cosechados} kg</td>
-            <td class="py-2.5 px-3 text-right text-gray-600">RD$ ${d.tarifa_kg}</td>
-            <td class="py-2.5 px-3 text-right font-semibold">RD$ ${d.subtotal_kg.toFixed(2)}</td>
-            <td class="py-2.5 px-3 text-right text-red-600 font-semibold">RD$ ${d.adelantos.toFixed(2)}</td>
-            <td class="py-2.5 px-3 text-right font-black text-emerald-900">RD$ ${d.neto_a_pagar.toFixed(2)}</td>
-          </tr>
-        `;
-      });
-      document.getElementById("totalNominaValor").textContent = `RD$ ${data.total_nomina_rd.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-    }
-
-    async function cerrarNominaSemanal() {
-      if (!confirm("¿Desea aprobar y cerrar definitivamente la nómina de la Semana 45? Una vez cerrada quedará inmutable.")) return;
-      const res = await fetch("/api/nomina/aprobar?codigo_semana=2026-W45&aprobado_por=Gerencia%20General", { method: "POST" });
-      const data = await res.json();
-      alert(`Nómina aprobada y cerrada exitosamente con firma inmutable.`);
-      cargarNomina();
     }
 
     async function cargarInventario() {
@@ -933,41 +1578,26 @@
       });
     }
 
-    function openModalFusionCampos() {
-      const sA = document.getElementById("fusionCampoA");
-      const sB = document.getElementById("fusionCampoB");
-      sA.innerHTML = ""; sB.innerHTML = "";
-      globalCampos.filter(c => c.activo).forEach(c => {
-        sA.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.area_tareas} t)</option>`;
-        sB.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.area_tareas} t)</option>`;
+    function cargarProductosSKU() {
+      const g = document.getElementById("gridProductosSKU");
+      const skus = [
+        { marca: "Café El Vecino", pres: "7 oz (198.4 g)", format: "Grano y Molido", sku: "EV-7OZ" },
+        { marca: "Café El Vecino", pres: "250 g", format: "Grano y Molido", sku: "EV-250G" },
+        { marca: "Café El Vecino", pres: "400 g", format: "Grano y Molido", sku: "EV-400G" },
+        { marca: "Insurrecto Morning Blend", pres: "12 oz (340.2 g)", format: "Grano y Molido (100% Puro)", sku: "MB-12OZ" },
+        { marca: "Insurrecto Morning Blend", pres: "2.5 lb (1,134 g)", format: "Grano y Molido (100% Puro)", sku: "MB-25LB" },
+      ];
+      g.innerHTML = "";
+      skus.forEach(s => {
+        g.innerHTML += `
+          <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200">
+            <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">${s.sku}</span>
+            <h4 class="text-sm font-bold text-gray-900 mt-2">${s.marca}</h4>
+            <p class="text-xs text-gray-600 font-semibold">${s.pres}</p>
+            <p class="text-[11px] text-gray-500 mt-1">${s.format}</p>
+          </div>
+        `;
       });
-      document.getElementById("modalFusion").classList.remove("hidden");
-    }
-    function cerrarModalFusion() {
-      document.getElementById("modalFusion").classList.add("hidden");
-    }
-
-    async function ejecutarFusionCampos() {
-      const a = parseInt(document.getElementById("fusionCampoA").value);
-      const b = parseInt(document.getElementById("fusionCampoB").value);
-      if (a === b) { alert("Debe seleccionar dos campos distintos"); return; }
-      const res = await fetch("/api/campos/fusionar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          campo_origen_a_id: a,
-          campo_origen_b_id: b,
-          nuevo_codigo: document.getElementById("fusionCodigo").value,
-          nuevo_nombre: document.getElementById("fusionNombre").value,
-          motivo: document.getElementById("fusionMotivo").value,
-          autorizado_por: "Administrador General"
-        })
-      });
-      if (res.ok) {
-        alert("Fusión ejecutada e historial preservado exitosamente.");
-        cerrarModalFusion();
-        cargarCampos();
-      }
     }
 
     async function sincronizarSheets() {

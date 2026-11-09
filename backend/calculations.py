@@ -183,3 +183,63 @@ def conversion_presentacion_kg(unidad: str, valor: float) -> float:
     elif u in ["kg", "kilos"]:
         return float(round(v, 4))
     return float(round(v, 4))
+
+def f_rendimiento_global_campo(kg_cosechados: float, kg_tostado: float) -> float:
+    """
+    Rendimiento global por campo (Regla Central Especificación v2.3):
+    R_global = (P_tostado / P_cosechado) * 100
+    Compara kilos cosechados con kilos de café tostado atribuibles al mismo origen.
+    """
+    if not kg_cosechados or kg_cosechados <= 0:
+        return 0.0
+    c = Decimal(str(kg_cosechados))
+    t = Decimal(str(kg_tostado))
+    return float(round((t / c) * 100, 3))
+
+def f_merma_global_campo(kg_cosechados: float, kg_tostado: float) -> float:
+    """Merma global acumulada por campo: M_global = 100 - R_global"""
+    r = f_rendimiento_global_campo(kg_cosechados, kg_tostado)
+    return float(round(100.0 - r, 3)) if kg_cosechados > 0 else 0.0
+
+def f_cadena_mermas_etapas(kg_cosecha: float, kg_despulpado: float, kg_secado: float, kg_trillado: float, kg_tostado: float) -> dict:
+    """
+    Desglose oficial por etapas: Cosecha -> Despulpado -> Secado -> Trillado -> Tostado
+    Cada merma calculada estrictamente respecto al peso de entrada de su propia etapa.
+    """
+    # Etapa 1: Despulpado
+    r_desp = f01_rendimiento_etapa(kg_cosecha, kg_despulpado)
+    m_desp_pct = f03_merma_porcentual(kg_cosecha, kg_despulpado)
+    m_desp_kg = f02_merma_etapa_kg(kg_cosecha, kg_despulpado)
+
+    # Etapa 2: Secado
+    r_sec = f01_rendimiento_etapa(kg_despulpado, kg_secado)
+    m_sec_pct = f03_merma_porcentual(kg_despulpado, kg_secado)
+    m_sec_kg = f02_merma_etapa_kg(kg_despulpado, kg_secado)
+
+    # Etapa 3: Trillado
+    r_trill = f01_rendimiento_etapa(kg_secado, kg_trillado)
+    m_trill_pct = f03_merma_porcentual(kg_secado, kg_trillado)
+    m_trill_kg = f02_merma_etapa_kg(kg_secado, kg_trillado)
+
+    # Etapa 4: Tostado
+    r_tost = f01_rendimiento_etapa(kg_trillado, kg_tostado)
+    m_tost_pct = f03_merma_porcentual(kg_trillado, kg_tostado)
+    m_tost_kg = f02_merma_etapa_kg(kg_trillado, kg_tostado)
+
+    # Global
+    r_global = f_rendimiento_global_campo(kg_cosecha, kg_tostado)
+    m_global_kg = kg_cosecha - kg_tostado
+
+    return {
+        "etapas": [
+            {"etapa": "Cosecha", "peso_entrada": kg_cosecha, "peso_salida": kg_cosecha, "rendimiento_pct": 100.0, "merma_kg": 0.0, "merma_pct": 0.0},
+            {"etapa": "Despulpado y Lavado", "peso_entrada": kg_cosecha, "peso_salida": kg_despulpado, "rendimiento_pct": r_desp, "merma_kg": m_desp_kg, "merma_pct": m_desp_pct},
+            {"etapa": "Secado", "peso_entrada": kg_despulpado, "peso_salida": kg_secado, "rendimiento_pct": r_sec, "merma_kg": m_sec_kg, "merma_pct": m_sec_pct},
+            {"etapa": "Trillado y Selección", "peso_entrada": kg_secado, "peso_salida": kg_trillado, "rendimiento_pct": r_trill, "merma_kg": m_trill_kg, "merma_pct": m_trill_pct},
+            {"etapa": "Tostado", "peso_entrada": kg_trillado, "peso_salida": kg_tostado, "rendimiento_pct": r_tost, "merma_kg": m_tost_kg, "merma_pct": m_tost_pct},
+        ],
+        "rendimiento_global_pct": r_global,
+        "merma_global_kg": m_global_kg,
+        "merma_global_pct": round(100.0 - r_global, 3)
+    }
+

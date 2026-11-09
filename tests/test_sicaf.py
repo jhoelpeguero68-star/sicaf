@@ -323,3 +323,50 @@ def test_pa24_conversion_presentaciones():
     consumo_100_unidades = round(100 * peso_unidad_12oz, 3)
     assert peso_unidad_12oz == 0.3402
     assert consumo_100_unidades == 34.020
+
+# ----------------- PA-25 Rendimiento Global por Campo y Mermas por Etapa (v2.3) -----------------
+def test_pa25_rendimiento_global_campo_mermas_etapa():
+    from backend.calculations import f_rendimiento_global_campo, f_cadena_mermas_etapas
+    # Regla central: 100 kg cosechados -> 28 kg tostados atribuibles -> Rendimiento 28.0%
+    r_global = f_rendimiento_global_campo(100.0, 28.0)
+    assert r_global == 28.0
+
+    cadena = f_cadena_mermas_etapas(
+        kg_cosecha=100.0,
+        kg_despulpado=80.0,
+        kg_secado=40.0,
+        kg_trillado=35.0,
+        kg_tostado=28.0
+    )
+    assert cadena["rendimiento_global_pct"] == 28.0
+    assert cadena["merma_global_kg"] == 72.0
+    assert cadena["merma_global_pct"] == 72.0
+
+    # Verificar que cada merma se calcula respecto al peso de entrada de su propia etapa
+    etapas = cadena["etapas"]
+    # Despulpado: 100 -> 80 (Merma = 20 kg = 20.0%)
+    assert etapas[1]["merma_kg"] == 20.0 and etapas[1]["merma_pct"] == 20.0
+    # Secado: 80 -> 40 (Merma = 40 kg = 50.0%)
+    assert etapas[2]["merma_kg"] == 40.0 and etapas[2]["merma_pct"] == 50.0
+    # Trillado: 40 -> 35 (Merma = 5 kg = 12.5%)
+    assert etapas[3]["merma_kg"] == 5.0 and etapas[3]["merma_pct"] == 12.5
+    # Tostado: 35 -> 28 (Merma = 7 kg = 20.0%)
+    assert etapas[4]["merma_kg"] == 7.0 and etapas[4]["merma_pct"] == 20.0
+
+# ----------------- PA-26 Tarifas Administrativas y Ajustes de Nómina (v2.3) -----------------
+def test_pa26_tarifas_administrativas_ajustes():
+    from backend.calculations import f14_pago_por_kilo, f15_pago_por_jornada, f16_neto_semanal
+    # Administración establece tarifas: RD$ 8.50 / kg y RD$ 850 / jornada
+    tarifa_kilo_admin = 8.50
+    tarifa_jornada_admin = 850.0
+
+    # Trabajador: 100 kg recolectados + 1 jornada completa
+    subtotal_kg = f14_pago_por_kilo(100.0, tarifa_kilo_admin) # 850.0
+    subtotal_jornada = f15_pago_por_jornada(1.0, tarifa_jornada_admin) # 850.0
+    bruto = subtotal_kg + subtotal_jornada # 1700.0
+
+    # Adelanto registrado: RD$ 300.00, Bono: RD$ 100.00
+    neto = f16_neto_semanal(bruto, bonos=100.0, adelantos=300.0)
+    assert bruto == 1700.0
+    assert neto == 1500.0
+
