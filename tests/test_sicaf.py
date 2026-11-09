@@ -461,4 +461,118 @@ def test_pa28_control_sacos_subcodigos_traslado():
     finally:
         db.close()
 
+# ----------------- PA-29 Validación en Beneficio con Selección de Café de Primera / Segunda (RN-13 / RN-51) -----------------
+def test_pa29_recepcion_clasificacion_primera_segunda_app():
+    from backend.database import SessionLocal
+    from backend.models import Lote, RecepcionBeneficio
+    from backend.main import validar_recepcion_beneficio, RecepcionBeneficioInput
+
+    db = SessionLocal()
+    try:
+        # Validación de lote clasificado como Café de Primera
+        input_primera = RecepcionBeneficioInput(
+            fecha="2026-11-09",
+            kg_validados=1000.0,
+            pct_fruta_inmadura=4.2,
+            clasificacion="PRIMERA",
+            campo_id=1,
+            observaciones="Recepción conforme Primera",
+            validado_por="Encargado de Beneficio Móvil"
+        )
+        res1 = validar_recepcion_beneficio(input_primera, db)
+        assert res1["status"] == "VALIDADO"
+        assert res1["clasificacion"] == "PRIMERA"
+        assert res1["alerta_calidad"] is False
+
+        # Validación de lote clasificado como Café de Segunda con alerta de fruta inmadura > 5%
+        input_segunda = RecepcionBeneficioInput(
+            fecha="2026-11-09",
+            kg_validados=450.0,
+            pct_fruta_inmadura=6.8,
+            clasificacion="SEGUNDA",
+            campo_id=2,
+            observaciones="Fruta con flotadores",
+            validado_por="Encargado de Beneficio Móvil"
+        )
+        res2 = validar_recepcion_beneficio(input_segunda, db)
+        assert res2["status"] == "VALIDADO"
+        assert res2["clasificacion"] == "SEGUNDA"
+        assert res2["alerta_calidad"] is True
+        assert "supera el umbral" in res2["alerta_mensaje"]
+
+        # Verificar en base de datos
+        lote_p = db.query(Lote).filter(Lote.codigo == res1["lote_codigo"]).first()
+        assert lote_p.clasificacion == "PRIMERA"
+        assert lote_p.kg_disponibles == 1000.0
+
+        lote_s = db.query(Lote).filter(Lote.codigo == res2["lote_codigo"]).first()
+        assert lote_s.clasificacion == "SEGUNDA"
+        assert lote_s.kg_disponibles == 450.0
+    finally:
+        db.close()
+
+# ----------------- PA-30 Registro de Kg en Secado desde App Móvil (Entrada, Humedad, Cierre) -----------------
+def test_pa30_secado_registro_kg_movil():
+    import uuid
+    from backend.database import SessionLocal
+    from backend.models import SecadoLote, Lote
+    from backend.main import (
+        iniciar_secado, SecadoIniciarInput,
+        registrar_humedad_secado, SecadoHumedadInput,
+        finalizar_secado, SecadoFinalizarInput
+    )
+
+    db = SessionLocal()
+    try:
+        # Lote de prueba
+        lote = Lote(
+            codigo=f"SEC-TEST-{uuid.uuid4().hex[:6].upper()}",
+            empresa_propietaria="Insurrecto Coffee",
+            clasificacion="PRIMERA",
+            estado_cafe="PERGAMINO_MOJADO",
+            almacen_actual_id=1,
+            kg_disponibles=850.0
+        )
+        db.add(lote)
+        db.commit()
+        db.refresh(lote)
+
+        # 1. Iniciar secado registrando kg de entrada en báscula
+        res_ini = iniciar_secado(SecadoIniciarInput(
+            lote_id=lote.id,
+            almacen_id=2, # Almacén de Secado en Baní
+            fecha_inicio="2026-11-09",
+            peso_inicial_kg=850.0,
+            humedad_inicial=52.0,
+            responsable="Encargado de Secado Móvil"
+        ), db)
+        assert res_ini["status"] == "SECADO_INICIADO"
+        sec_id = res_ini["secado_id"]
+
+        # 2. Registrar medición periódica de humedad
+        res_med = registrar_humedad_secado(SecadoHumedadInput(
+            secado_id=sec_id,
+            porcentaje_humedad=24.5,
+            instrumento="Higrómetro Móvil",
+            clima="Soleado y Seco",
+            responsable="Encargado de Secado Móvil"
+        ), db)
+        assert res_med["status"] == "MEDICION_REGISTRADA"
+        assert res_med["humedad"] == 24.5
+
+        # 3. Finalizar secado registrando kg finales secos en báscula y humedad target (11.8%)
+        res_fin = finalizar_secado(SecadoFinalizarInput(
+            secado_id=sec_id,
+            fecha_fin="2026-11-15",
+            peso_final_kg=415.5,
+            humedad_final=11.8,
+            responsable="Encargado de Secado Móvil"
+        ), db)
+        assert res_fin["status"] == "FINALIZADO"
+        assert res_fin["peso_final_kg"] == 415.5
+        assert res_fin["cuarentena"] is False
+    finally:
+        db.close()
+
+
 

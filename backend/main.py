@@ -130,7 +130,11 @@ class RecepcionBeneficioInput(BaseModel):
     pct_fruta_inmadura: float
     tipo_proveedor: str = "MYRA_CAFE"
     productor_externo_id: Optional[int] = None
+    campo_id: Optional[int] = None
     lote_codigo: Optional[str] = None
+    clasificacion: str = "PRIMERA" # 'PRIMERA', 'SEGUNDA', 'BOLA', 'MIXTO'
+    kg_primera: Optional[float] = None
+    kg_segunda: Optional[float] = None
     observaciones: Optional[str] = None
     validado_por: str = "Encargado de Beneficio"
 
@@ -659,14 +663,17 @@ def validar_recepcion_beneficio(item: RecepcionBeneficioInput, db: Session = Dep
     db.commit()
     db.refresh(rec)
 
-    # Crear Lote oficial
+    # Crear Lote oficial con clasificación (PRIMERA, SEGUNDA o BOLA / RN-2.5)
+    clasif = item.clasificacion.upper() if item.clasificacion else "PRIMERA"
+    estado_grano = "BOLA" if clasif == "BOLA" else "CEREZA"
+
     lote = Lote(
         codigo=lote_cod,
         empresa_propietaria="Insurrecto Coffee",
         origen_tipo="EXTERNO" if item.tipo_proveedor == "PRODUCTOR_EXTERNO" else "PROPIO",
         variedad="Caturra Rojo",
-        clasificacion="PRIMERA",
-        estado_cafe="CEREZA",
+        clasificacion=clasif,
+        estado_cafe=estado_grano,
         humedad_actual=62.0,
         almacen_actual_id=1, # Almacén Beneficio
         kg_disponibles=item.kg_validados
@@ -674,6 +681,46 @@ def validar_recepcion_beneficio(item: RecepcionBeneficioInput, db: Session = Dep
     db.add(lote)
     db.commit()
     db.refresh(lote)
+
+    # Asociar campo de procedencia si se especifica (Trazabilidad encadenada F-09)
+    if item.campo_id:
+        db.add(LoteCampo(
+            lote_id=lote.id,
+            campo_id=item.campo_id,
+            kg_cereza_equivalente=item.kg_validados,
+            porcentaje_participacion=100.0,
+            metodo="MEDIDO"
+        ))
+        db.commit()
+
+    # Si se registró desglose de Primera y Segunda simultáneamente en tolva
+    if item.kg_primera and item.kg_segunda and (item.kg_primera + item.kg_segunda > 0):
+        # Crear sublotes de clasificación inmediata
+        lote_p = Lote(
+            codigo=f"{lote_cod}-P1",
+            empresa_propietaria="Insurrecto Coffee",
+            origen_tipo="PROPIO",
+            variedad="Caturra Rojo",
+            clasificacion="PRIMERA",
+            estado_cafe=estado_grano,
+            humedad_actual=62.0,
+            almacen_actual_id=1,
+            kg_disponibles=item.kg_primera
+        )
+        lote_s = Lote(
+            codigo=f"{lote_cod}-S2",
+            empresa_propietaria="Insurrecto Coffee",
+            origen_tipo="PROPIO",
+            variedad="Caturra Rojo",
+            clasificacion="SEGUNDA",
+            estado_cafe=estado_grano,
+            humedad_actual=62.0,
+            almacen_actual_id=1,
+            kg_disponibles=item.kg_segunda
+        )
+        db.add(lote_p)
+        db.add(lote_s)
+        db.commit()
 
     # Libro mayor: Entrada por cambio de propietario
     mov = MovimientoInventario(
@@ -683,17 +730,18 @@ def validar_recepcion_beneficio(item: RecepcionBeneficioInput, db: Session = Dep
         kg_afectados=item.kg_validados,
         documento_ref=f"REC-{rec.id}",
         usuario=item.validado_por,
-        observacion="Traspaso oficial Myra Café SRL -> Insurrecto Coffee (Sin precio)"
+        observacion=f"Traspaso oficial Myra Café SRL -> Insurrecto Coffee [{clasif}] (Sin precio)"
     )
     db.add(mov)
     db.commit()
 
-    registrar_auditoria(db, item.validado_por, "RECEPCION_BENEFICIO", "trx_recepcion_beneficio", str(rec.id), f"Recepción {lote_cod} validada con {item.kg_validados} kg. Fruta inmadura: {item.pct_fruta_inmadura}%")
+    registrar_auditoria(db, item.validado_por, "RECEPCION_BENEFICIO", "trx_recepcion_beneficio", str(rec.id), f"Recepción {lote_cod} validada con {item.kg_validados} kg [{clasif}]. Fruta inmadura: {item.pct_fruta_inmadura}%")
 
     return {
         "status": "VALIDADO",
         "recepcion_id": rec.id,
         "lote_codigo": lote_cod,
+        "clasificacion": clasif,
         "diferencia_kg": diferencia,
         "alerta_calidad": alerta_calidad,
         "alerta_mensaje": "ALERTA: Fruta inmadura supera el umbral de 5.0%" if alerta_calidad else "Calidad de recepción óptima"
@@ -855,6 +903,7 @@ def finalizar_secado(item: SecadoFinalizarInput, db: Session = Depends(get_db)):
 
     return {
         "status": "CUARENTENA" if cuarentena else "FINALIZADO",
+        "cuarentena": cuarentena,
         "lote_codigo": lote.codigo,
         "humedad_final": item.humedad_final,
         "peso_final_kg": item.peso_final_kg,

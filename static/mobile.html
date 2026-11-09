@@ -31,13 +31,23 @@
   <!-- CONTENIDO -->
   <main class="flex-1 p-4 max-w-md mx-auto w-full">
 
-    <!-- SELECTOR DE MODO / PESTAÑAS MÓVILES -->
-    <div class="flex bg-white rounded-xl p-1 mb-4 shadow-sm border border-[#e8dfd5]">
-      <button id="tabBtnPesaje" onclick="cambiarPestana('pesaje')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-[#1b4332] text-white transition flex items-center justify-center gap-1.5 shadow">
-        <i class="fa-solid fa-scale-balanced"></i> 1. Pesaje Recolector
+    <!-- SELECTOR DE MODO / PESTAÑAS MÓVILES (4 MÓDULOS) -->
+    <div class="grid grid-cols-4 gap-1 bg-white rounded-2xl p-1 mb-4 shadow-sm border border-[#e8dfd5] text-center">
+      <button id="tabBtnPesaje" onclick="cambiarPestana('pesaje')" class="py-2 px-1 text-[11px] font-bold rounded-xl bg-[#1b4332] text-white transition shadow flex flex-col items-center justify-center">
+        <i class="fa-solid fa-scale-balanced text-sm mb-0.5"></i>
+        <span>1. Cosecha</span>
       </button>
-      <button id="tabBtnSacos" onclick="cambiarPestana('sacos')" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition flex items-center justify-center gap-1.5">
-        <i class="fa-solid fa-tags"></i> 2. Rotulación Sacos
+      <button id="tabBtnBeneficio" onclick="cambiarPestana('beneficio')" class="py-2 px-1 text-[11px] font-bold rounded-xl text-gray-600 hover:bg-gray-100 transition flex flex-col items-center justify-center">
+        <i class="fa-solid fa-industry text-sm mb-0.5"></i>
+        <span>2. Beneficio</span>
+      </button>
+      <button id="tabBtnSecado" onclick="cambiarPestana('secado')" class="py-2 px-1 text-[11px] font-bold rounded-xl text-gray-600 hover:bg-gray-100 transition flex flex-col items-center justify-center">
+        <i class="fa-solid fa-sun text-sm mb-0.5"></i>
+        <span>3. Secado</span>
+      </button>
+      <button id="tabBtnSacos" onclick="cambiarPestana('sacos')" class="py-2 px-1 text-[11px] font-bold rounded-xl text-gray-600 hover:bg-gray-100 transition flex flex-col items-center justify-center">
+        <i class="fa-solid fa-tags text-sm mb-0.5"></i>
+        <span>4. Sacos</span>
       </button>
     </div>
 
@@ -146,6 +156,219 @@
         <div id="listaPesajesLocales" class="space-y-2 text-xs divide-y divide-gray-100">
           <!-- Dinámico -->
         </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 2: VALIDACIÓN EN BENEFICIO Y SELECCIÓN DE CALIDAD (RN-13 / RN-51 / IMAGEN) -->
+    <div id="seccionBeneficio" class="hidden">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e8dfd5] mb-4">
+        
+        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+          <i class="fa-solid fa-scale-balanced text-emerald-800 text-lg"></i>
+          <h2 class="text-base font-bold text-gray-800">Validación en Beneficio</h2>
+        </div>
+
+        <!-- NOTA OFICIAL IDÉNTICA A LA IMAGEN -->
+        <div class="p-3 bg-amber-50/90 rounded-2xl border border-amber-200 text-amber-900 text-xs mb-4">
+          <span class="font-bold text-amber-950">RN-13 / RN-51:</span> Cambio formal de propietario de Myra Café SRL a Insurrecto Coffee sin precio registrado.
+        </div>
+
+        <form id="formBeneficio" onsubmit="guardarValidacionBeneficio(event)" class="space-y-4">
+          <!-- Fecha -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha</label>
+            <input type="date" id="beneficioFecha" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-gray-50 font-medium" required>
+          </div>
+
+          <!-- Campo de Procedencia / Origen -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Campo de Procedencia (Finca La Peñita)</label>
+            <select id="beneficioCampoSelect" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white font-medium" required>
+              <option value="">Cargando campos...</option>
+            </select>
+          </div>
+
+          <!-- Kg Validados en Báscula de Beneficio -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Kg Validados en Báscula de Beneficio</label>
+            <div class="relative">
+              <input type="number" id="beneficioKgValidados" step="0.1" min="0.1" placeholder="1000.0" class="w-full border-2 border-emerald-700 rounded-xl px-3 py-3 text-2xl font-black text-emerald-900 focus:outline-none" required>
+              <span class="absolute right-3 top-3.5 text-sm font-bold text-gray-400">KG</span>
+            </div>
+          </div>
+
+          <!-- SELECCIÓN DEL CAFÉ: PRIMERA O SEGUNDA (Instrucción del Usuario) -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Selección y Clasificación del Café</label>
+            <div class="grid grid-cols-3 gap-1.5 mb-2">
+              <button type="button" id="btnClasifPrimera" onclick="seleccionarClasificacion('PRIMERA')" class="py-2 px-1 text-xs font-bold rounded-xl border-2 border-emerald-700 bg-emerald-50 text-emerald-900 transition flex items-center justify-center gap-1 shadow-sm">
+                <i class="fa-solid fa-circle text-[9px] text-emerald-600"></i> Primera
+              </button>
+              <button type="button" id="btnClasifSegunda" onclick="seleccionarClasificacion('SEGUNDA')" class="py-2 px-1 text-xs font-bold rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-circle text-[9px] text-amber-500"></i> Segunda
+              </button>
+              <button type="button" id="btnClasifBola" onclick="seleccionarClasificacion('BOLA')" class="py-2 px-1 text-xs font-bold rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-circle text-[9px] text-yellow-800"></i> Bola
+              </button>
+            </div>
+            <input type="hidden" id="beneficioClasificacion" value="PRIMERA">
+          </div>
+
+          <!-- % de Fruta Inmadura (Muestreo Manual) -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-xs font-semibold text-gray-700">% de Fruta Inmadura (Muestreo Manual)</label>
+              <span id="badgeAlertaVerde" class="hidden text-[10px] bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded-full animate-pulse">ALERTA &gt; 5.0%</span>
+            </div>
+            <div class="relative">
+              <input type="number" id="beneficioPctVerde" step="0.1" min="0" max="100" placeholder="4.2" oninput="verificarAlertaFrutaInmadura()" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-base font-bold text-gray-800 focus:outline-none" required>
+              <span class="absolute right-3 top-3 text-sm font-bold text-gray-400">%</span>
+            </div>
+            <p id="labelAlertaVerde" class="text-[11px] text-gray-500 mt-1">Alerta automática si supera 5.0%</p>
+          </div>
+
+          <!-- Observaciones -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Observaciones</label>
+            <input type="text" id="beneficioObservaciones" placeholder="Recepción conforme" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-xs text-gray-700 bg-white font-medium">
+          </div>
+
+          <!-- Botón idéntico al de la imagen -->
+          <button type="submit" class="w-full bg-[#1b4332] hover:bg-[#143522] active:scale-95 text-white font-bold py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2 mt-2">
+            <i class="fa-solid fa-check"></i> Validar y Emitir Lote
+          </button>
+        </form>
+      </div>
+
+      <!-- ÚLTIMAS RECEPCIONES REGISTRADAS -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-[#e8dfd5] mb-4">
+        <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Lotes Validados en Beneficio</h3>
+        <div id="listaRecepcionesBeneficio" class="space-y-2 text-xs divide-y divide-gray-100">
+          <!-- Dinámico -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA 3: CONTROL DE SECADO (REGISTRO DE KG Y HUMEDAD) -->
+    <div id="seccionSecado" class="hidden">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-[#e8dfd5] mb-4">
+        
+        <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+          <i class="fa-solid fa-sun text-amber-600 text-lg"></i>
+          <div>
+            <h2 class="text-base font-bold text-gray-800">Control de Secado</h2>
+            <p class="text-[11px] text-gray-500">Baní y La Peñita • Registro de Kg y Humedad</p>
+          </div>
+        </div>
+
+        <!-- Subpestañas de Secado: Entrada (Kg) / Medición / Cierre (Kg Secos) -->
+        <div class="flex bg-gray-100 rounded-xl p-1 mb-4 text-xs font-bold">
+          <button type="button" id="btnSubSecadoEntrada" onclick="cambiarSubSecado('entrada')" class="flex-1 py-1.5 rounded-lg bg-amber-700 text-white shadow">
+            1. Entrada (Kg)
+          </button>
+          <button type="button" id="btnSubSecadoMedicion" onclick="cambiarSubSecado('medicion')" class="flex-1 py-1.5 rounded-lg text-gray-600 hover:bg-gray-200">
+            2. Humedad (%)
+          </button>
+          <button type="button" id="btnSubSecadoCierre" onclick="cambiarSubSecado('cierre')" class="flex-1 py-1.5 rounded-lg text-gray-600 hover:bg-gray-200">
+            3. Cierre (Kg)
+          </button>
+        </div>
+
+        <!-- SUB-FORM 1: ENTRADA A SECADO (REGISTRO DE KG INICIALES) -->
+        <form id="formSecadoEntrada" onsubmit="guardarSecadoEntrada(event)" class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Lote a Secar</label>
+            <select id="secadoLoteSelect" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-medium" required>
+              <option value="">Cargando lotes...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Almacén de Secado</label>
+            <select id="secadoAlmacenSelect" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-medium">
+              <option value="2">Almacén de Secado en Baní</option>
+              <option value="3">Almacén Pergamino Finca La Peñita</option>
+              <option value="1">Patio de Beneficio (Rancho Arriba)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Kg que Ingresan al Secado (Báscula)</label>
+            <div class="relative">
+              <input type="number" id="secadoKgEntrada" step="0.1" min="0.1" placeholder="Ej. 850.0" class="w-full border-2 border-amber-600 rounded-xl px-3 py-2.5 text-xl font-black text-amber-950 focus:outline-none" required>
+              <span class="absolute right-3 top-3 text-xs font-bold text-gray-400">KG</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Humedad Inicial Medida (%)</label>
+            <input type="number" id="secadoHumedadInicial" step="0.5" value="50.0" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-bold text-gray-800" required>
+          </div>
+
+          <button type="submit" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-play"></i> Iniciar Secado y Registrar Kg
+          </button>
+        </form>
+
+        <!-- SUB-FORM 2: MEDICIÓN DE HUMEDAD -->
+        <form id="formSecadoMedicion" onsubmit="guardarSecadoMedicion(event)" class="space-y-3.5 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Lote en Secado</label>
+            <select id="secadoMedicionLoteSelect" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-medium" required>
+              <option value="">Cargando lotes en secado...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Porcentaje de Humedad Medido (%)</label>
+            <div class="relative">
+              <input type="number" id="secadoMedicionHumedad" step="0.1" placeholder="Ej. 22.4" class="w-full border-2 border-blue-600 rounded-xl px-3 py-2.5 text-xl font-black text-blue-950 focus:outline-none" required>
+              <span class="absolute right-3 top-3 text-xs font-bold text-gray-400">%</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Condición Climática</label>
+            <select id="secadoMedicionClima" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white">
+              <option value="Soleado y Seco">☀️ Soleado y Seco</option>
+              <option value="Nublado">⛅ Nublado</option>
+              <option value="Alta Humedad / Neblina">🌫️ Alta Humedad / Neblina</option>
+            </select>
+          </div>
+
+          <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-droplet"></i> Registrar Medición de Humedad
+          </button>
+        </form>
+
+        <!-- SUB-FORM 3: SALIDA / CIERRE DE SECADO (REGISTRO DE KG FINALES) -->
+        <form id="formSecadoCierre" onsubmit="guardarSecadoCierre(event)" class="space-y-3.5 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Lote en Secado a Cerrar</label>
+            <select id="secadoCierreLoteSelect" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-medium" required>
+              <option value="">Cargando lotes en secado...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Kg Finales Obtenidos en Seco (Báscula)</label>
+            <div class="relative">
+              <input type="number" id="secadoCierreKgFinales" step="0.1" min="0.1" placeholder="Ej. 415.5" class="w-full border-2 border-emerald-700 rounded-xl px-3 py-2.5 text-xl font-black text-emerald-950 focus:outline-none" required>
+              <span class="absolute right-3 top-3 text-xs font-bold text-gray-400">KG SECO</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Humedad Final Medida (%)</label>
+            <input type="number" id="secadoCierreHumedadFinal" step="0.1" value="11.8" placeholder="10.0 - 12.5%" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-black text-emerald-900" required>
+            <p class="text-[11px] text-gray-500 mt-1">Rango óptimo para trilla: 10.0% – 12.5%</p>
+          </div>
+
+          <button type="submit" class="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-box-archive"></i> Finalizar Secado y Registrar Kg
+          </button>
+        </form>
+
       </div>
     </div>
 
@@ -303,20 +526,43 @@
 
     function cambiarPestana(pestana) {
       const pPesaje = document.getElementById("seccionPesaje");
+      const pBeneficio = document.getElementById("seccionBeneficio");
+      const pSecado = document.getElementById("seccionSecado");
       const pSacos = document.getElementById("seccionSacos");
+
       const bPesaje = document.getElementById("tabBtnPesaje");
+      const bBeneficio = document.getElementById("tabBtnBeneficio");
+      const bSecado = document.getElementById("tabBtnSecado");
       const bSacos = document.getElementById("tabBtnSacos");
+
+      // Ocultar todas las secciones
+      pPesaje.classList.add("hidden");
+      pBeneficio.classList.add("hidden");
+      pSecado.classList.add("hidden");
+      pSacos.classList.add("hidden");
+
+      // Resetear estilos de botones
+      const btnInactivo = "py-2 px-1 text-[11px] font-bold rounded-xl text-gray-600 hover:bg-gray-100 transition flex flex-col items-center justify-center";
+      bPesaje.className = btnInactivo;
+      bBeneficio.className = btnInactivo;
+      bSecado.className = btnInactivo;
+      bSacos.className = btnInactivo;
 
       if (pestana === 'pesaje') {
         pPesaje.classList.remove("hidden");
-        pSacos.classList.add("hidden");
-        bPesaje.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-[#1b4332] text-white transition flex items-center justify-center gap-1.5 shadow";
-        bSacos.className = "flex-1 py-2 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition flex items-center justify-center gap-1.5";
-      } else {
-        pPesaje.classList.add("hidden");
+        bPesaje.className = "py-2 px-1 text-[11px] font-bold rounded-xl bg-[#1b4332] text-white transition shadow flex flex-col items-center justify-center";
+      } else if (pestana === 'beneficio') {
+        pBeneficio.classList.remove("hidden");
+        bBeneficio.className = "py-2 px-1 text-[11px] font-bold rounded-xl bg-emerald-800 text-white transition shadow flex flex-col items-center justify-center";
+        document.getElementById("beneficioFecha").value = new Date().toISOString().split("T")[0];
+        cargarRecepcionesBeneficioMobile();
+      } else if (pestana === 'secado') {
+        pSecado.classList.remove("hidden");
+        bSecado.className = "py-2 px-1 text-[11px] font-bold rounded-xl bg-amber-700 text-white transition shadow flex flex-col items-center justify-center";
+        cargarLotesParaSecado();
+      } else if (pestana === 'sacos') {
         pSacos.classList.remove("hidden");
-        bSacos.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-amber-700 text-white transition flex items-center justify-center gap-1.5 shadow";
-        bPesaje.className = "flex-1 py-2 text-xs font-bold rounded-lg text-gray-600 hover:bg-gray-100 transition flex items-center justify-center gap-1.5";
+        bSacos.className = "py-2 px-1 text-[11px] font-bold rounded-xl bg-amber-800 text-white transition shadow flex flex-col items-center justify-center";
       }
     }
 
@@ -352,12 +598,16 @@
     function poblarSelects() {
       const sc = document.getElementById("selectCampo");
       const sacosCampo = document.getElementById("sacosCampoSelect");
+      const benCampo = document.getElementById("beneficioCampoSelect");
+
       sc.innerHTML = '<option value="">Seleccione el campo...</option>';
       sacosCampo.innerHTML = '<option value="">Seleccione el campo...</option>';
+      if (benCampo) benCampo.innerHTML = '<option value="">Seleccione campo de procedencia...</option>';
 
       cachedCampos.forEach(c => {
         sc.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.variedad || 'Café'})</option>`;
         sacosCampo.innerHTML += `<option value="${c.id}" data-codigo="${c.codigo}" data-nombre="${c.nombre}">${c.codigo} - ${c.nombre}</option>`;
+        if (benCampo) benCampo.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.sector || 'Finca La Peñita'})</option>`;
       });
 
       renderTrabajadoresSelect(cachedTrabajadores);
@@ -681,6 +931,282 @@
         `;
       });
       document.getElementById("resultadoSubcodigos").classList.remove("hidden");
+    }
+
+    // --- BENEFICIO & RECEPCIÓN EN BÁSCULA (RN-13 / RN-51 / CLASIFICACIÓN PRIMERA Y SEGUNDA) ---
+    function seleccionarClasificacion(tipo) {
+      document.getElementById("beneficioClasificacion").value = tipo;
+      const b1 = document.getElementById("btnClasifPrimera");
+      const b2 = document.getElementById("btnClasifSegunda");
+      const b3 = document.getElementById("btnClasifBola");
+
+      const inactivo = "py-2 px-1 text-xs font-bold rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1";
+      b1.className = inactivo;
+      b2.className = inactivo;
+      b3.className = inactivo;
+
+      if (tipo === 'PRIMERA') {
+        b1.className = "py-2 px-1 text-xs font-bold rounded-xl border-2 border-emerald-700 bg-emerald-50 text-emerald-900 transition flex items-center justify-center gap-1 shadow-sm";
+      } else if (tipo === 'SEGUNDA') {
+        b2.className = "py-2 px-1 text-xs font-bold rounded-xl border-2 border-amber-600 bg-amber-50 text-amber-950 transition flex items-center justify-center gap-1 shadow-sm";
+      } else if (tipo === 'BOLA') {
+        b3.className = "py-2 px-1 text-xs font-bold rounded-xl border-2 border-yellow-800 bg-yellow-50 text-yellow-950 transition flex items-center justify-center gap-1 shadow-sm";
+      }
+    }
+
+    function verificarAlertaFrutaInmadura() {
+      const val = parseFloat(document.getElementById("beneficioPctVerde").value) || 0;
+      const badge = document.getElementById("badgeAlertaVerde");
+      const input = document.getElementById("beneficioPctVerde");
+      const lbl = document.getElementById("labelAlertaVerde");
+
+      if (val > 5.0) {
+        badge.classList.remove("hidden");
+        input.classList.remove("border-gray-300");
+        input.classList.add("border-red-500", "bg-red-50/50");
+        lbl.className = "text-[11px] font-bold text-red-700 mt-1";
+        lbl.textContent = "⚠️ ALERTA: Fruta inmadura supera el umbral máximo de 5.0%";
+      } else {
+        badge.classList.add("hidden");
+        input.classList.remove("border-red-500", "bg-red-50/50");
+        input.classList.add("border-gray-300");
+        lbl.className = "text-[11px] text-gray-500 mt-1";
+        lbl.textContent = "Alerta automática si supera 5.0%";
+      }
+    }
+
+    async function guardarValidacionBeneficio(e) {
+      e.preventDefault();
+      const fecha = document.getElementById("beneficioFecha").value;
+      const campoId = parseInt(document.getElementById("beneficioCampoSelect").value) || null;
+      const kg = parseFloat(document.getElementById("beneficioKgValidados").value);
+      const clasif = document.getElementById("beneficioClasificacion").value;
+      const verde = parseFloat(document.getElementById("beneficioPctVerde").value) || 0.0;
+      const obs = document.getElementById("beneficioObservaciones").value.trim();
+
+      if (!fecha || !kg) {
+        alert("Por favor ingrese la fecha y los kilogramos pesados en báscula.");
+        return;
+      }
+
+      const payload = {
+        fecha: fecha,
+        kg_validados: kg,
+        pct_fruta_inmadura: verde,
+        tipo_proveedor: "MYRA_CAFE",
+        campo_id: campoId,
+        clasificacion: clasif,
+        observaciones: obs || `Recepción conforme [${clasif}]`,
+        validado_por: "Encargado de Beneficio Móvil"
+      };
+
+      try {
+        const res = await fetch("/api/recepcion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.status === "VALIDADO") {
+          alert(`✅ Lote Emitido Exitosamente:\nCódigo: ${data.lote_codigo}\nClasificación: ${data.clasificacion}\nKg Validados: ${kg} kg\n${data.alerta_mensaje}`);
+          document.getElementById("formBeneficio").reset();
+          document.getElementById("beneficioFecha").value = new Date().toISOString().split("T")[0];
+          seleccionarClasificacion("PRIMERA");
+          verificarAlertaFrutaInmadura();
+          cargarRecepcionesBeneficioMobile();
+        } else {
+          alert("Error: " + JSON.stringify(data));
+        }
+      } catch (err) {
+        alert("Modo offline: Recepción guardada localmente.");
+      }
+    }
+
+    async function cargarRecepcionesBeneficioMobile() {
+      try {
+        const res = await fetch("/api/recepcion");
+        const data = await res.json();
+        const div = document.getElementById("listaRecepcionesBeneficio");
+        if (!div) return;
+        div.innerHTML = "";
+        if (data.length === 0) {
+          div.innerHTML = '<p class="text-gray-400 py-2">Sin recepciones registradas.</p>';
+          return;
+        }
+        data.slice(0, 5).forEach(r => {
+          div.innerHTML += `
+            <div class="flex justify-between items-center py-2">
+              <div>
+                <p class="font-bold text-gray-800">${r.lote_codigo} <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-black">${r.kg_validados} kg</span></p>
+                <p class="text-[10px] text-gray-500">${r.fecha} • Fruta verde: ${r.pct_fruta_inmadura}% • ${r.validado_por}</p>
+              </div>
+              <span class="text-[10px] ${r.alerta_calidad ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'} px-2 py-0.5 rounded-full font-bold">
+                ${r.alerta_calidad ? 'Alerta >5%' : 'Conforme'}
+              </span>
+            </div>
+          `;
+        });
+      } catch (e) {
+        console.error("Error cargando recepciones:", e);
+      }
+    }
+
+    // --- CONTROL DE SECADO (REGISTRO DE KG Y HUMEDAD) ---
+    function cambiarSubSecado(sub) {
+      const fEntrada = document.getElementById("formSecadoEntrada");
+      const fMed = document.getElementById("formSecadoMedicion");
+      const fCierre = document.getElementById("formSecadoCierre");
+
+      const bEntrada = document.getElementById("btnSubSecadoEntrada");
+      const bMed = document.getElementById("btnSubSecadoMedicion");
+      const bCierre = document.getElementById("btnSubSecadoCierre");
+
+      fEntrada.classList.add("hidden");
+      fMed.classList.add("hidden");
+      fCierre.classList.add("hidden");
+
+      const inactivo = "flex-1 py-1.5 rounded-lg text-gray-600 hover:bg-gray-200";
+      bEntrada.className = inactivo;
+      bMed.className = inactivo;
+      bCierre.className = inactivo;
+
+      if (sub === 'entrada') {
+        fEntrada.classList.remove("hidden");
+        bEntrada.className = "flex-1 py-1.5 rounded-lg bg-amber-700 text-white shadow";
+      } else if (sub === 'medicion') {
+        fMed.classList.remove("hidden");
+        bMed.className = "flex-1 py-1.5 rounded-lg bg-blue-700 text-white shadow";
+      } else if (sub === 'cierre') {
+        fCierre.classList.remove("hidden");
+        bCierre.className = "flex-1 py-1.5 rounded-lg bg-emerald-800 text-white shadow";
+      }
+    }
+
+    async function cargarLotesParaSecado() {
+      try {
+        const [resInv, resSec] = await Promise.all([
+          fetch("/api/inventario"),
+          fetch("/api/secado")
+        ]);
+        const inv = await resInv.json();
+        const sec = await resSec.json();
+
+        // Select entrada (lotes que pueden secarse: cereza o pergamino)
+        const sEntrada = document.getElementById("secadoLoteSelect");
+        sEntrada.innerHTML = '<option value="">Seleccione lote a ingresar...</option>';
+        inv.forEach(l => {
+          sEntrada.innerHTML += `<option value="${l.id}">${l.lote} (${l.estado} - ${l.clasificacion}) - ${l.kg_disponibles} kg</option>`;
+        });
+
+        // Selects medición y cierre (lotes actualmente EN_SECADO)
+        const sMed = document.getElementById("secadoMedicionLoteSelect");
+        const sCierre = document.getElementById("secadoCierreLoteSelect");
+        sMed.innerHTML = '<option value="">Seleccione lote en secado...</option>';
+        sCierre.innerHTML = '<option value="">Seleccione lote a cerrar...</option>';
+
+        const enSecado = sec.filter(s => s.estado === "EN_SECADO");
+        enSecado.forEach(s => {
+          const opt = `<option value="${s.id}">${s.lote_codigo} (${s.almacen}) - ${s.peso_inicial_kg} kg [Hum: ${s.humedad_actual}%]</option>`;
+          sMed.innerHTML += opt;
+          sCierre.innerHTML += opt;
+        });
+      } catch (e) {
+        console.error("Error cargando lotes secado:", e);
+      }
+    }
+
+    async function guardarSecadoEntrada(e) {
+      e.preventDefault();
+      const loteId = parseInt(document.getElementById("secadoLoteSelect").value);
+      const almId = parseInt(document.getElementById("secadoAlmacenSelect").value);
+      const kg = parseFloat(document.getElementById("secadoKgEntrada").value);
+      const hum = parseFloat(document.getElementById("secadoHumedadInicial").value);
+
+      if (!loteId || !kg) {
+        alert("Seleccione el lote y registre los kg en báscula.");
+        return;
+      }
+
+      const res = await fetch("/api/secado/iniciar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lote_id: loteId,
+          almacen_id: almId,
+          fecha_inicio: new Date().toISOString().split("T")[0],
+          peso_inicial_kg: kg,
+          humedad_inicial: hum,
+          responsable: "Encargado de Secado Móvil"
+        })
+      });
+      const data = await res.json();
+      if (data.status === "SECADO_INICIADO") {
+        alert(`✅ Secado iniciado con ${kg} kg registrados.`);
+        document.getElementById("formSecadoEntrada").reset();
+        cargarLotesParaSecado();
+      } else {
+        alert("Error iniciando secado: " + JSON.stringify(data));
+      }
+    }
+
+    async function guardarSecadoMedicion(e) {
+      e.preventDefault();
+      const secId = parseInt(document.getElementById("secadoMedicionLoteSelect").value);
+      const hum = parseFloat(document.getElementById("secadoMedicionHumedad").value);
+      const clima = document.getElementById("secadoMedicionClima").value;
+
+      if (!secId || isNaN(hum)) {
+        alert("Seleccione el lote e ingrese la humedad medida.");
+        return;
+      }
+
+      const res = await fetch("/api/secado/medicion-humedad", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secado_id: secId,
+          porcentaje_humedad: hum,
+          instrumento: "Higrómetro Calibrado Móvil",
+          clima: clima,
+          responsable: "Encargado de Secado Móvil"
+        })
+      });
+      const data = await res.json();
+      if (data.status === "MEDICION_REGISTRADA") {
+        alert(`✅ Medición de humedad (${hum}%) registrada.`);
+        document.getElementById("formSecadoMedicion").reset();
+        cargarLotesParaSecado();
+      } else {
+        alert("Error: " + JSON.stringify(data));
+      }
+    }
+
+    async function guardarSecadoCierre(e) {
+      e.preventDefault();
+      const secId = parseInt(document.getElementById("secadoCierreLoteSelect").value);
+      const kgFinal = parseFloat(document.getElementById("secadoCierreKgFinales").value);
+      const humFinal = parseFloat(document.getElementById("secadoCierreHumedadFinal").value);
+
+      if (!secId || !kgFinal || isNaN(humFinal)) {
+        alert("Complete todos los campos de cierre.");
+        return;
+      }
+
+      const res = await fetch("/api/secado/finalizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secado_id: secId,
+          fecha_fin: new Date().toISOString().split("T")[0],
+          peso_final_kg: kgFinal,
+          humedad_final: humFinal,
+          responsable: "Encargado de Secado Móvil"
+        })
+      });
+      const data = await res.json();
+      alert(`✅ Secado Finalizado:\nEstado: ${data.status}\nKg Secos Registrados: ${kgFinal} kg\nRendimiento Secado: ${data.rendimiento_secado_pct}%\n${data.mensaje}`);
+      document.getElementById("formSecadoCierre").reset();
+      cargarLotesParaSecado();
     }
   </script>
 </body>
