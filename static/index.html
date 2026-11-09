@@ -970,6 +970,55 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: REGISTRAR CONTEO FÍSICO Y AJUSTE DE INVENTARIO (RN-07 / RN-08) ==================== -->
+  <div id="modalAjusteConteo" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-clipboard-check text-gray-800"></i> Conteo Físico y Ajuste de Inventario (RN-07)
+        </h3>
+        <button onclick="cerrarModalAjusteConteo()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-3.5 my-4 text-xs">
+        <div class="p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-700">
+          <i class="fa-solid fa-shield mr-1"></i> <strong>Inmutabilidad:</strong> Los saldos no se sobreescriben. Se inserta un movimiento tipo <code>AJUSTE_CONTEO</code> con justificación y auditoría.
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Lote a Ajustar</label>
+          <select id="ajusteConteoLoteSelect" onchange="actualizarInfoLoteConteo()" class="w-full border border-gray-300 rounded-xl p-2.5 font-bold"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Kg en Libros</label>
+            <input type="text" id="ajusteConteoKgLibro" readonly class="w-full border border-gray-200 bg-gray-100 rounded-xl p-2.5 font-bold text-gray-600">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Kg Físicos Reales</label>
+            <input type="number" id="ajusteConteoKgFisico" step="0.1" class="w-full border-2 border-emerald-700 rounded-xl p-2.5 font-black text-emerald-950">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Motivo Obligatorio del Ajuste</label>
+          <input type="text" id="ajusteConteoMotivo" placeholder="Ej. Conteo físico de fin de mes o merma natural" class="w-full border border-gray-300 rounded-xl p-2.5" required>
+        </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Autorizado Por</label>
+          <input type="text" id="ajusteConteoAutorizado" value="Auditoría / Gerencia General" class="w-full border border-gray-300 rounded-xl p-2.5">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalAjusteConteo()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarAjusteConteo()" class="px-5 py-2 text-xs font-bold bg-gray-900 hover:bg-black text-white rounded-xl shadow">Aplicar Ajuste de Conteo</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== MODAL: EMITIR SACOS Y SUBCÓDIGOS (RN-2.5 / RN-3.B) ==================== -->
   <div id="modalGenerarSacosWeb" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-sicaf">
@@ -1553,6 +1602,74 @@
         alert(`${tipo} de RD$ ${monto} registrado exitosamente.`);
         cerrarModalAjusteNomina();
         cargarNomina();
+      }
+    }
+
+    // ==================== CONTEO FÍSICO Y AJUSTE DE INVENTARIO (RN-07 / RN-08) ====================
+    let lotesParaConteo = [];
+
+    async function abrirModalAjusteConteo() {
+      try {
+        const res = await fetch("/api/inventario");
+        lotesParaConteo = await res.json();
+        const sel = document.getElementById("ajusteConteoLoteSelect");
+        sel.innerHTML = '<option value="">Seleccione un lote...</option>';
+        lotesParaConteo.forEach(l => {
+          sel.innerHTML += `<option value="${l.id}">${l.lote} (${l.almacen}) - ${l.kg_disponibles} kg</option>`;
+        });
+        document.getElementById("ajusteConteoKgLibro").value = "";
+        document.getElementById("ajusteConteoKgFisico").value = "";
+        document.getElementById("modalAjusteConteo").classList.remove("hidden");
+      } catch (e) {
+        alert("Error cargando inventario: " + e.message);
+      }
+    }
+
+    function cerrarModalAjusteConteo() {
+      document.getElementById("modalAjusteConteo").classList.add("hidden");
+    }
+
+    function actualizarInfoLoteConteo() {
+      const loteId = parseInt(document.getElementById("ajusteConteoLoteSelect").value);
+      const lote = lotesParaConteo.find(l => l.id === loteId);
+      if (lote) {
+        document.getElementById("ajusteConteoKgLibro").value = `${lote.kg_disponibles} kg`;
+        document.getElementById("ajusteConteoKgFisico").value = lote.kg_disponibles;
+      }
+    }
+
+    async function guardarAjusteConteo() {
+      const loteId = parseInt(document.getElementById("ajusteConteoLoteSelect").value);
+      const kgFisico = parseFloat(document.getElementById("ajusteConteoKgFisico").value);
+      const motivo = document.getElementById("ajusteConteoMotivo").value.trim();
+      const autoriza = document.getElementById("ajusteConteoAutorizado").value.trim();
+
+      const lote = lotesParaConteo.find(l => l.id === loteId);
+      if (!lote || isNaN(kgFisico) || !motivo) {
+        alert("Por favor complete todos los datos del conteo físico.");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/inventario/ajuste-conteo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            almacen_id: 1,
+            lote_id: loteId,
+            kg_fisico: kgFisico,
+            motivo: motivo,
+            responsable: "Encargado de Inventario",
+            autorizado_por: autoriza
+          })
+        });
+        const data = await res.json();
+        alert(`Ajuste de inventario aplicado exitosamente.\nDiferencia: ${data.diferencia_kg} kg`);
+        cerrarModalAjusteConteo();
+        cargarInventario();
+        cargarAuditoria();
+      } catch (err) {
+        alert("Error aplicando ajuste: " + err.message);
       }
     }
 
