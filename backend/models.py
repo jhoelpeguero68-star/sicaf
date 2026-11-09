@@ -1,10 +1,13 @@
 """
-SICAF - Modelos de Datos v2.2 (SQLAlchemy)
-Reflejo exacto del esquema relacional y las 11 pestañas de Google Sheets
+SICAF - Modelos de Datos Relacionales v2.2 (SQLAlchemy)
+Implementación integral de las entidades de la Especificación Maestra:
+Maestros, Operaciones de Campo, Beneficio, Secado, Traslados, Transformación,
+Inventario Libro Mayor (Append-Only), Nómina, Calidad y Auditoría Inmutable con Hash Chaining.
 """
+import hashlib
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text
+    Column, Integer, String, Float, DateTime, Boolean, ForeignKey, Text, func
 )
 from sqlalchemy.orm import relationship
 from .database import Base
@@ -14,7 +17,7 @@ class Empresa(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
     rnc = Column(String(20), nullable=True)
-    tipo = Column(String(30), nullable=False) # 'AGRICOLA' (Myra) | 'INDUSTRIAL' (Insurrecto)
+    tipo = Column(String(30), nullable=False) # 'AGRICOLA' (Myra Café SRL) | 'INDUSTRIAL' (Insurrecto Coffee)
 
 class Usuario(Base):
     __tablename__ = "seg_usuarios"
@@ -22,9 +25,17 @@ class Usuario(Base):
     nombre = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    rol = Column(String(50), nullable=False) # 'ADMIN', 'CAMPO', 'BENEFICIO', 'SECADO', 'NOMINA', 'AUDITOR'
+    rol = Column(String(50), nullable=False) # 'ADMIN', 'CAMPO', 'BENEFICIO', 'SECADO', 'NOMINA', 'AUDITOR', 'CALIDAD', 'TOSTADURIA'
     activo = Column(Boolean, default=True)
     creado_el = Column(DateTime, default=datetime.utcnow)
+
+class Campana(Base):
+    __tablename__ = "mae_campanas"
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(50), unique=True, nullable=False) # ej: "Cosecha 2026-2027"
+    fecha_inicio = Column(String(10), nullable=False)
+    fecha_fin = Column(String(10), nullable=True)
+    estado = Column(String(20), default="ACTIVA") # 'ACTIVA' | 'CERRADA'
 
 class Campo(Base):
     __tablename__ = "mae_campos"
@@ -33,9 +44,21 @@ class Campo(Base):
     nombre = Column(String(100), nullable=False)
     sector = Column(String(50), nullable=True)
     area_tareas = Column(Float, default=0.0)
-    variedad = Column(String(100), default="Caturra / Típica")
+    variedad = Column(String(100), default="Caturra Rojo / Típica")
     tipo_uso = Column(String(50), default="Café Productivo")
+    altitud_msnm = Column(Integer, default=1150)
+    ano_siembra = Column(Integer, default=2018)
     activo = Column(Boolean, default=True)
+
+class CampoHistorial(Base):
+    __tablename__ = "mae_campo_historial"
+    id = Column(Integer, primary_key=True, index=True)
+    tipo_cambio = Column(String(30), nullable=False) # 'FUSION', 'DIVISION', 'RENOMBRE', 'DESACTIVACION'
+    campo_origen_id = Column(Integer, ForeignKey("mae_campos.id"), nullable=True)
+    campo_destino_id = Column(Integer, ForeignKey("mae_campos.id"), nullable=True)
+    fecha = Column(DateTime, default=datetime.utcnow)
+    motivo = Column(String(255), nullable=False)
+    autorizado_por = Column(String(100), nullable=False)
 
 class Trabajador(Base):
     __tablename__ = "mae_trabajadores"
@@ -45,6 +68,15 @@ class Trabajador(Base):
     cuadrilla = Column(String(50), default="Cuadrilla Principal")
     activo = Column(Boolean, default=True)
 
+class ProductorExterno(Base):
+    __tablename__ = "mae_productores_externos"
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(120), nullable=False)
+    rnc_cedula = Column(String(30), nullable=True)
+    comunidad = Column(String(100), default="Rancho Arriba")
+    telefono = Column(String(30), nullable=True)
+    activo = Column(Boolean, default=True)
+
 class Tarifa(Base):
     __tablename__ = "mae_tarifas"
     id = Column(Integer, primary_key=True, index=True)
@@ -52,6 +84,8 @@ class Tarifa(Base):
     valor_rd = Column(Float, nullable=False)
     vigencia_desde = Column(DateTime, default=datetime.utcnow)
     vigencia_hasta = Column(DateTime, nullable=True)
+    creado_por = Column(String(100), default="Administrador")
+    aprobado_por = Column(String(100), default="Gerencia General")
     activo = Column(Boolean, default=True)
 
 class Almacen(Base):
@@ -59,7 +93,18 @@ class Almacen(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
     empresa = Column(String(50), default="Insurrecto Coffee")
+    tipo = Column(String(30), default="PROPIO") # 'PROPIO', 'TERCERO_CUSTODIA', 'TRANSITO_VIRTUAL'
     ubicacion = Column(String(150), nullable=False)
+    activo = Column(Boolean, default=True)
+
+class ProductoSKU(Base):
+    __tablename__ = "mae_productos_sku"
+    id = Column(Integer, primary_key=True, index=True)
+    sku = Column(String(50), unique=True, index=True, nullable=False)
+    marca = Column(String(50), nullable=False) # "Café El Vecino", "Insurrecto Morning Blend"
+    presentacion = Column(String(50), nullable=False) # "7 oz", "250 g", "400 g", "12 oz", "2.5 lb"
+    formato = Column(String(20), default="GRANO") # 'GRANO' | 'MOLIDO'
+    peso_neto_kg = Column(Float, nullable=False)
     activo = Column(Boolean, default=True)
 
 class JornadaCosecha(Base):
@@ -82,6 +127,7 @@ class RegistroCosecha(Base):
     fraccion_jornada = Column(Float, default=1.0)
     bascula_id = Column(String(50), default="Báscula #1")
     registrado_por = Column(String(100), nullable=False)
+    confirmado_trabajador = Column(Boolean, default=True) # RN-11
     creado_en = Column(DateTime, default=datetime.utcnow)
 
     campo = relationship("Campo")
@@ -91,11 +137,13 @@ class RecepcionBeneficio(Base):
     __tablename__ = "trx_recepcion_beneficio"
     id = Column(Integer, primary_key=True, index=True)
     fecha = Column(String(10), nullable=False)
+    tipo_proveedor = Column(String(30), default="MYRA_CAFE") # 'MYRA_CAFE' | 'PRODUCTOR_EXTERNO'
+    productor_externo_id = Column(Integer, ForeignKey("mae_productores_externos.id"), nullable=True)
     kg_campo_total = Column(Float, nullable=False)
-    kg_validados = Column(Float, nullable=False)
-    diferencia_kg = Column(Float, default=0.0)
-    pct_fruta_inmadura = Column(Float, default=0.0) # Muestreo de calidad manual
-    alerta_calidad = Column(Boolean, default=False) # Si inmadura > 5.0%
+    kg_validados = Column(Float, nullable=False) # Peso validado en báscula de beneficio
+    diferencia_kg = Column(Float, default=0.0) # Diferencia de recepción
+    pct_fruta_inmadura = Column(Float, default=0.0) # Muestreo manual calidad
+    alerta_calidad = Column(Boolean, default=False) # Umbral > 5.0%
     lote_codigo = Column(String(50), unique=True, nullable=False)
     validado_por = Column(String(100), nullable=False)
     observaciones = Column(Text, nullable=True)
@@ -105,32 +153,199 @@ class Lote(Base):
     __tablename__ = "inv_lotes"
     id = Column(Integer, primary_key=True, index=True)
     codigo = Column(String(50), unique=True, index=True, nullable=False)
-    origen_tipo = Column(String(20), default="PROPIO") # PROPIO | EXTERNO
+    empresa_propietaria = Column(String(50), default="Insurrecto Coffee") # RN-50 / RN-51
+    origen_tipo = Column(String(20), default="PROPIO") # 'PROPIO' | 'EXTERNO'
     variedad = Column(String(100), default="Caturra")
-    clasificacion = Column(String(30), default="PRIMERA") # PRIMERA | SEGUNDA | BOLA
-    estado_cafe = Column(String(40), default="CEREZA") # CEREZA | PERGAMINO_MOJADO | EN_SECADO | PERGAMINO_SECO | ORO | TOSTADO
+    clasificacion = Column(String(30), default="PRIMERA") # 'PRIMERA' | 'SEGUNDA' | 'BOLA'
+    estado_cafe = Column(String(40), default="CEREZA") # 'CEREZA', 'PERGAMINO_MOJADO', 'EN_SECADO', 'PERGAMINO_SECO', 'ORO', 'TOSTADO', 'EMPACADO'
     humedad_actual = Column(Float, default=0.0)
     almacen_actual_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False)
+    estado_stock = Column(String(30), default="DISPONIBLE") # 'DISPONIBLE', 'RESERVADO', 'EN_TRANSITO', 'CUARENTENA'
     kg_disponibles = Column(Float, default=0.0)
     activo = Column(Boolean, default=True)
 
+    almacen = relationship("Almacen")
+
+class LoteCampo(Base):
+    """Genealogía y participación de campo en cada lote para método encadenado F-09/F-10"""
+    __tablename__ = "inv_lote_campo"
+    id = Column(Integer, primary_key=True, index=True)
+    lote_id = Column(Integer, ForeignKey("inv_lotes.id"), nullable=False)
+    campo_id = Column(Integer, ForeignKey("mae_campos.id"), nullable=False)
+    kg_cereza_equivalente = Column(Float, nullable=False)
+    porcentaje_participacion = Column(Float, nullable=False) # Suma 100%
+    metodo = Column(String(20), default="MEDIDO") # 'MEDIDO', 'MIXTO', 'ASIGNADO'
+
+    lote = relationship("Lote")
+    campo = relationship("Campo")
+
 class MovimientoInventario(Base):
-    """Libro Mayor de Inventario (Solo Inserción / Append-Only)"""
+    """
+    Libro Mayor de Inventario (Solo Inserción / Append-Only / RN-02).
+    Los saldos NUNCA se editan, se obtienen sumando los movimientos.
+    """
     __tablename__ = "trx_movimientos_inv"
     id = Column(Integer, primary_key=True, index=True)
     fecha = Column(DateTime, default=datetime.utcnow)
     lote_id = Column(Integer, ForeignKey("inv_lotes.id"), nullable=False)
     almacen_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False)
-    tipo_movimiento = Column(String(30), nullable=False) # ENTRADA_COSECHA, CAMBIO_PROPIETARIO, TRASLADO_SALIDA, TRASLADO_ENTRADA, CONSUMO, AJUSTE
+    estado_stock = Column(String(30), default="DISPONIBLE")
+    tipo_movimiento = Column(String(35), nullable=False) 
+    # 'ENTRADA_COSECHA', 'CAMBIO_PROPIETARIO', 'CONSUMO_PROCESO', 'PRODUCCION_PROCESO',
+    # 'TRASLADO_SALIDA', 'TRASLADO_ENTRADA', 'AJUSTE_CONTEO', 'MUESTRA', 'DESCARTE', 'VENTA'
     kg_afectados = Column(Float, nullable=False) # Positivo o Negativo
     documento_ref = Column(String(100), nullable=True)
     usuario = Column(String(100), nullable=False)
     observacion = Column(String(255), nullable=True)
 
+    lote = relationship("Lote")
+    almacen = relationship("Almacen")
+
+class SecadoLote(Base):
+    """Control de Secado en Baní o La Peñita con seguimiento de humedad (RN-30a a RN-30d)"""
+    __tablename__ = "trx_secado_lote"
+    id = Column(Integer, primary_key=True, index=True)
+    lote_id = Column(Integer, ForeignKey("inv_lotes.id"), nullable=False)
+    almacen_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False) # Almacén Baní o La Peñita
+    fecha_inicio = Column(String(10), nullable=False)
+    fecha_fin = Column(String(10), nullable=True)
+    peso_inicial_kg = Column(Float, nullable=False)
+    peso_final_kg = Column(Float, nullable=True)
+    humedad_inicial = Column(Float, default=50.0)
+    humedad_final = Column(Float, nullable=True) # Obligatoria al cerrar secado
+    dias_secado = Column(Integer, default=0)
+    estado = Column(String(30), default="EN_SECADO") # 'EN_SECADO', 'FINALIZADO', 'CUARENTENA'
+    responsable = Column(String(100), nullable=False)
+    observaciones = Column(Text, nullable=True)
+
+    lote = relationship("Lote")
+    almacen = relationship("Almacen")
+
+class MedicionHumedad(Base):
+    __tablename__ = "trx_medicion_humedad"
+    id = Column(Integer, primary_key=True, index=True)
+    secado_id = Column(Integer, ForeignKey("trx_secado_lote.id"), nullable=False)
+    fecha_hora = Column(DateTime, default=datetime.utcnow)
+    porcentaje_humedad = Column(Float, nullable=False)
+    instrumento = Column(String(80), default="Higrómetro Digital Calibrado")
+    clima = Column(String(50), default="Soleado y seco")
+    responsable = Column(String(100), nullable=False)
+
+    secado = relationship("SecadoLote")
+
+class ProcesoTransformacion(Base):
+    """
+    Procesos Industriales: Despulpado, Descascarado, Trillado, Selección, Tostado, Molienda, Empaque.
+    Cumple balance de masa F-05 y F-06.
+    """
+    __tablename__ = "trx_procesos"
+    id = Column(Integer, primary_key=True, index=True)
+    tipo_proceso = Column(String(40), nullable=False) # 'DESPULPADO', 'TRILLADO', 'SELECCION', 'TOSTADO', 'MOLIENDA', 'EMPAQUE'
+    almacen_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False)
+    fecha_inicio = Column(DateTime, default=datetime.utcnow)
+    fecha_fin = Column(DateTime, nullable=True)
+    peso_entrada_total = Column(Float, nullable=False)
+    peso_salida_principal = Column(Float, default=0.0)
+    peso_subproductos = Column(Float, default=0.0) # Pulpa, cascarilla
+    peso_descarte = Column(Float, default=0.0) # Defectos, piedras
+    peso_muestra = Column(Float, default=0.0)
+    residual_kg = Column(Float, default=0.0)
+    residual_pct = Column(Float, default=0.0)
+    alerta_balance = Column(Boolean, default=False)
+    grado_tueste = Column(String(30), nullable=True) # Claro, Medio, Oscuro
+    responsable = Column(String(100), nullable=False)
+    validador = Column(String(100), nullable=True)
+    estado = Column(String(20), default="FINALIZADO") # 'EN_PROCESO', 'FINALIZADO', 'ANULADO'
+    notas = Column(Text, nullable=True)
+
+class LoteGenealogia(Base):
+    __tablename__ = "inv_lote_genealogia"
+    id = Column(Integer, primary_key=True, index=True)
+    lote_padre_id = Column(Integer, ForeignKey("inv_lotes.id"), nullable=False)
+    lote_hijo_id = Column(Integer, ForeignKey("inv_lotes.id"), nullable=False)
+    proceso_id = Column(Integer, ForeignKey("trx_procesos.id"), nullable=True)
+    kg_aportados = Column(Float, nullable=False)
+    fraccion_participacion = Column(Float, nullable=False)
+
+class Traslado(Base):
+    """Control de Traslados Rancho Arriba <-> Baní <-> Tostaduría <-> Almacenes (RN-31 a RN-39)"""
+    __tablename__ = "trx_traslados"
+    id = Column(Integer, primary_key=True, index=True)
+    numero_guia = Column(String(50), unique=True, index=True, nullable=False)
+    almacen_origen_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False)
+    almacen_destino_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False)
+    fecha_despacho = Column(DateTime, default=datetime.utcnow)
+    fecha_recepcion = Column(DateTime, nullable=True)
+    chofer = Column(String(100), nullable=False)
+    vehiculo_placa = Column(String(30), nullable=False)
+    responsable_despacho = Column(String(100), nullable=False)
+    responsable_recepcion = Column(String(100), nullable=True)
+    estado = Column(String(30), default="EN_TRANSITO") # 'BORRADOR', 'EN_TRANSITO', 'RECIBIDO', 'CONCILIADO', 'CON_DIFERENCIA'
+    tolerancia_pct = Column(Float, default=0.5) # 0.5% por defecto
+    total_kg_despachados = Column(Float, nullable=False)
+    total_kg_recibidos = Column(Float, default=0.0)
+    diferencia_kg = Column(Float, default=0.0)
+    resolucion_diferencia = Column(String(40), nullable=True) 
+    # 'PESAJE_BASCULA', 'PERDIDA_TRANSPORTE', 'HUMEDAD_EN_TRANSITO', 'RECLAMO_TRANSPORTISTA', 'CORRECCION_DE_DESPACHO'
+    autorizado_por = Column(String(100), nullable=True)
+    observaciones = Column(Text, nullable=True)
+
+    almacen_origen = relationship("Almacen", foreign_keys=[almacen_origen_id])
+    almacen_destino = relationship("Almacen", foreign_keys=[almacen_destino_id])
+
+class TrasladoDetalle(Base):
+    __tablename__ = "trx_traslado_detalle"
+    id = Column(Integer, primary_key=True, index=True)
+    traslado_id = Column(Integer, ForeignKey("trx_traslados.id"), nullable=False)
+    lote_id = Column(Integer, ForeignKey("inv_lotes.id"), nullable=False)
+    kg_despachados = Column(Float, nullable=False)
+    kg_recibidos = Column(Float, default=0.0)
+    diferencia_kg = Column(Float, default=0.0)
+
+    lote = relationship("Lote")
+
+class AnalisisCalidad(Base):
+    """Módulo de Calidad y Catación (RN-40 a RN-44)"""
+    __tablename__ = "cal_analisis"
+    id = Column(Integer, primary_key=True, index=True)
+    lote_id = Column(Integer, ForeignKey("inv_lotes.id"), nullable=False)
+    fecha = Column(String(10), nullable=False)
+    tipo_analisis = Column(String(30), default="FISICO_Y_CATA") # 'FISICO', 'CATACION', 'HUMEDAD'
+    humedad_pct = Column(Float, nullable=True)
+    defectos_totales = Column(Integer, default=0)
+    granulometria_zaranda = Column(String(50), default="17/18 Superior")
+    puntaje_catacion = Column(Float, nullable=True) # ej: 84.5 SCAA
+    notas_cata = Column(Text, nullable=True) # Floral, notas a chocolate, acidez cítrica
+    cuarentena = Column(Boolean, default=False)
+    responsable = Column(String(100), nullable=False)
+
+    lote = relationship("Lote")
+
+class ConteoFisico(Base):
+    """Conteo Físico y Auditoría de Inventario (RN-07 y RN-08)"""
+    __tablename__ = "inv_conteos_fisicos"
+    id = Column(Integer, primary_key=True, index=True)
+    almacen_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False)
+    fecha = Column(DateTime, default=datetime.utcnow)
+    responsable_conteo = Column(String(100), nullable=False)
+    autorizado_por = Column(String(100), nullable=True)
+    estado = Column(String(20), default="FINALIZADO") # 'EN_PROCESO', 'FINALIZADO'
+    observacion = Column(String(255), nullable=True)
+
+class ConteoDetalle(Base):
+    __tablename__ = "inv_conteo_detalle"
+    id = Column(Integer, primary_key=True, index=True)
+    conteo_id = Column(Integer, ForeignKey("inv_conteos_fisicos.id"), nullable=False)
+    lote_id = Column(Integer, ForeignKey("inv_lotes.id"), nullable=False)
+    kg_libro = Column(Float, nullable=False)
+    kg_fisico = Column(Float, nullable=False)
+    diferencia_kg = Column(Float, nullable=False) # kg_fisico - kg_libro
+    motivo_ajuste = Column(String(150), nullable=True)
+
 class NominaSemana(Base):
     __tablename__ = "trx_nomina_semanal"
     id = Column(Integer, primary_key=True, index=True)
-    codigo_semana = Column(String(20), unique=True, nullable=False) # ej: 2026-W45
+    codigo_semana = Column(String(20), unique=True, nullable=False) # ej: "2026-W45"
     fecha_inicio = Column(String(10), nullable=False)
     fecha_fin = Column(String(10), nullable=False)
     total_recolectores = Column(Integer, default=0)
@@ -138,7 +353,7 @@ class NominaSemana(Base):
     total_bruto_rd = Column(Float, default=0.0)
     total_adelantos_rd = Column(Float, default=0.0)
     total_neto_rd = Column(Float, default=0.0)
-    estado = Column(String(20), default="ABIERTA") # ABIERTA | EN_REVISION | APROBADA | PAGADA | CERRADA
+    estado = Column(String(20), default="ABIERTA") # 'ABIERTA', 'EN_REVISION', 'APROBADA', 'PAGADA', 'CERRADA'
     aprobada_por = Column(String(100), nullable=True)
 
 class NominaDetalle(Base):
@@ -158,12 +373,22 @@ class NominaDetalle(Base):
     trabajador = relationship("Trabajador")
 
 class AuditoriaLog(Base):
+    """
+    Registro inalterable con encadenamiento criptográfico (Hash Chaining / RN-85 y RN-86).
+    Cualquier intento de alteración rompe la cadena de integridad SHA-256.
+    """
     __tablename__ = "auditoria_log"
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
     usuario = Column(String(100), nullable=False)
-    accion = Column(String(50), nullable=False) # LOGIN, REGISTRO_COSECHA, VALIDAR_RECEPCION, APROBAR_NOMINA, etc.
-    entidad = Column(String(50), nullable=False)
-    registro_id = Column(String(50), nullable=True)
+    accion = Column(String(60), nullable=False)
+    entidad = Column(String(60), nullable=False)
+    registro_id = Column(String(60), nullable=True)
     detalle = Column(Text, nullable=True)
     ip_origen = Column(String(45), default="127.0.0.1")
+    hash_previo = Column(String(64), nullable=True)
+    hash_actual = Column(String(64), nullable=False)
+
+def generar_hash_auditoria(timestamp: str, usuario: str, accion: str, entidad: str, detalle: str, hash_previo: str) -> str:
+    raw = f"{timestamp}|{usuario}|{accion}|{entidad}|{detalle}|{hash_previo or 'GENESIS'}"
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()
