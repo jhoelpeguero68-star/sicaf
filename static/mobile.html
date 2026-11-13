@@ -174,32 +174,85 @@
         </div>
 
         <form id="formBeneficio" onsubmit="guardarValidacionBeneficio(event)" class="space-y-4">
-          <!-- Fecha -->
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha</label>
-            <input type="date" id="beneficioFecha" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-gray-50 font-medium" required>
+          <!-- Fecha y Bultos -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha</label>
+              <input type="date" id="beneficioFecha" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-gray-50 font-medium" required>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Cantidad de Bultos</label>
+              <div class="relative">
+                <input type="number" id="beneficioCantidadBultos" min="1" value="1" placeholder="Ej. 24" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-bold text-gray-900" required>
+                <span class="absolute right-3 top-2 text-[10px] font-bold text-gray-400">SACOS</span>
+              </div>
+            </div>
           </div>
 
-          <!-- Campo de Procedencia / Origen -->
+          <!-- Origen del Café: Misma Finca vs Productor Externo -->
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Campo de Procedencia (Finca La Peñita)</label>
-            <select id="beneficioCampoSelect" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white font-medium" required>
-              <option value="">Cargando campos...</option>
-            </select>
+            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Origen del Café Recibido</label>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <button type="button" id="btnOrigenFinca" onclick="cambiarOrigenBeneficio('MYRA_CAFE')" class="py-2 px-2 text-xs font-bold rounded-xl border-2 border-emerald-700 bg-emerald-50 text-emerald-900 transition flex items-center justify-center gap-1 shadow-sm">
+                <i class="fa-solid fa-mountain-sun text-emerald-700"></i> Finca La Peñita
+              </button>
+              <button type="button" id="btnOrigenExterno" onclick="cambiarOrigenBeneficio('PRODUCTOR_EXTERNO')" class="py-2 px-2 text-xs font-bold rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1">
+                <i class="fa-solid fa-truck-ramp-box text-gray-500"></i> Productor Externo
+              </button>
+            </div>
+            <input type="hidden" id="beneficioTipoProveedor" value="MYRA_CAFE">
+
+            <!-- Si es de la finca: Selector de Campo -->
+            <div id="bloqueCampoFinca">
+              <label class="block text-[11px] font-semibold text-emerald-900 mb-1">Campo de la Finca:</label>
+              <select id="beneficioCampoSelect" class="w-full border border-emerald-400 rounded-xl px-3 py-2.5 text-xs bg-emerald-50/40 font-medium text-emerald-950">
+                <option value="">Seleccione campo...</option>
+              </select>
+            </div>
+
+            <!-- Si es externo: Nombre de Productor -->
+            <div id="bloqueProductorExterno" class="hidden">
+              <label class="block text-[11px] font-semibold text-amber-900 mb-1">Nombre / Identificación del Productor Externo:</label>
+              <input type="text" id="beneficioProductorExternoNombre" placeholder="Ej. Cooperativa Los Montañeses" class="w-full border border-amber-300 rounded-xl px-3 py-2 text-xs bg-amber-50/40 font-medium">
+            </div>
           </div>
 
-          <!-- Kg Validados en Báscula de Beneficio -->
+          <!-- Kg Validados en Báscula de Beneficio (Total Cereza) -->
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Kg Validados en Báscula de Beneficio</label>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Kg Validados en Báscula de Beneficio (Total)</label>
             <div class="relative">
               <input type="number" id="beneficioKgValidados" step="0.1" min="0.1" placeholder="1000.0" class="w-full border-2 border-emerald-700 rounded-xl px-3 py-3 text-2xl font-black text-emerald-900 focus:outline-none" required>
-              <span class="absolute right-3 top-3.5 text-sm font-bold text-gray-400">KG</span>
+              <span class="absolute right-3 top-3.5 text-sm font-bold text-gray-400">KG TOTAL</span>
             </div>
+          </div>
+
+          <!-- KG OBTENIDOS TRAS LAVAR: PRIMERA Y SEGUNDA -->
+          <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
+            <span class="block text-[11px] font-bold text-emerald-900 uppercase tracking-wider mb-2">
+              <i class="fa-solid fa-water text-emerald-700"></i> Kg Obtenidos después de Lavar
+            </span>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-emerald-800 mb-1">Café de Primera (kg)</label>
+                <div class="relative">
+                  <input type="number" id="beneficioKgLavadoPrimera" step="0.1" min="0" placeholder="Ej. 750.0" class="w-full border border-emerald-500 rounded-xl px-2.5 py-1.5 text-sm font-black text-emerald-950 bg-white">
+                  <span class="absolute right-2 top-2 text-[10px] font-bold text-emerald-600">P1</span>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-amber-800 mb-1">Café de Segunda (kg)</label>
+                <div class="relative">
+                  <input type="number" id="beneficioKgLavadoSegunda" step="0.1" min="0" placeholder="Ej. 180.0" class="w-full border border-amber-400 rounded-xl px-2.5 py-1.5 text-sm font-black text-amber-950 bg-white">
+                  <span class="absolute right-2 top-2 text-[10px] font-bold text-amber-600">S2</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-[10px] text-emerald-700 mt-1.5">Registra la separación de calidades al salir de la lavadora/tolva.</p>
           </div>
 
           <!-- SELECCIÓN DEL CAFÉ: PRIMERA O SEGUNDA (Instrucción del Usuario) -->
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Selección y Clasificación del Café</label>
+            <label class="block text-xs font-semibold text-gray-700 mb-1.5">Clasificación Principal del Lote</label>
             <div class="grid grid-cols-3 gap-1.5 mb-2">
               <button type="button" id="btnClasifPrimera" onclick="seleccionarClasificacion('PRIMERA')" class="py-2 px-1 text-xs font-bold rounded-xl border-2 border-emerald-700 bg-emerald-50 text-emerald-900 transition flex items-center justify-center gap-1 shadow-sm">
                 <i class="fa-solid fa-circle text-[9px] text-emerald-600"></i> Primera
@@ -283,13 +336,39 @@
             </select>
           </div>
 
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Almacén de Secado</label>
-            <select id="secadoAlmacenSelect" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-medium">
-              <option value="2">Almacén de Secado en Baní</option>
-              <option value="3">Almacén Pergamino Finca La Peñita</option>
-              <option value="1">Patio de Beneficio (Rancho Arriba)</option>
-            </select>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Almacén de Secado</label>
+              <select id="secadoAlmacenSelect" class="w-full border border-gray-300 rounded-xl px-2 py-2 text-xs bg-white font-medium">
+                <option value="2">Almacén de Secado en Baní</option>
+                <option value="3">Almacén Pergamino Finca La Peñita</option>
+                <option value="1">Patio de Beneficio (Rancho Arriba)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Cantidad de Bultos</label>
+              <input type="number" id="secadoCantidadBultos" min="1" value="1" placeholder="Ej. 12" class="w-full border border-gray-300 rounded-xl px-2 py-2 text-xs bg-white font-bold" required>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo de Café</label>
+              <select id="secadoTipoCafe" class="w-full border border-gray-300 rounded-xl px-2 py-2 text-xs bg-white font-medium">
+                <option value="PERGAMINO_LAVADO">Pergamino Lavado</option>
+                <option value="PERGAMINO_MOJADO">Pergamino Mojado</option>
+                <option value="BOLA_NATURAL">Bola / Café Natural</option>
+                <option value="HONEY">Café Miel / Honey</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Categoría</label>
+              <select id="secadoCategoriaSelect" class="w-full border border-gray-300 rounded-xl px-2 py-2 text-xs bg-white font-medium">
+                <option value="PRIMERA">Primera</option>
+                <option value="SEGUNDA">Segunda</option>
+                <option value="BOLA">Bola</option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -300,9 +379,25 @@
             </div>
           </div>
 
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Humedad Inicial (%)</label>
+              <input type="number" id="secadoHumedadInicial" step="0.5" value="50.0" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-bold text-gray-800" required>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Temperatura (°C)</label>
+              <input type="number" id="secadoTemperaturaEntrada" step="0.5" value="28.0" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-bold text-gray-800">
+            </div>
+          </div>
+
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Humedad Inicial Medida (%)</label>
-            <input type="number" id="secadoHumedadInicial" step="0.5" value="50.0" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-bold text-gray-800" required>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Condición del Clima</label>
+            <select id="secadoClimaEntrada" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-medium">
+              <option value="Soleado con brisa moderada">☀️ Soleado con brisa moderada</option>
+              <option value="Soleado intenso / caluroso">🔥 Soleado intenso / caluroso</option>
+              <option value="Parcialmente nublado">⛅ Parcialmente nublado</option>
+              <option value="Nublado fresco">☁️ Nublado fresco</option>
+            </select>
           </div>
 
           <button type="submit" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
@@ -310,7 +405,7 @@
           </button>
         </form>
 
-        <!-- SUB-FORM 2: MEDICIÓN DE HUMEDAD -->
+        <!-- SUB-FORM 2: MEDICIÓN DE HUMEDAD Y CIERRE DIARIO -->
         <form id="formSecadoMedicion" onsubmit="guardarSecadoMedicion(event)" class="space-y-3.5 hidden">
           <div>
             <label class="block text-xs font-semibold text-gray-700 mb-1">Lote en Secado</label>
@@ -319,12 +414,32 @@
             </select>
           </div>
 
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Día de Secado</label>
+              <select id="secadoMedicionDiaNumero" class="w-full border border-gray-300 rounded-xl px-2 py-2 text-xs bg-white font-bold">
+                <option value="1">Día 1</option>
+                <option value="2">Día 2</option>
+                <option value="3">Día 3</option>
+                <option value="4">Día 4</option>
+                <option value="5">Día 5</option>
+                <option value="6">Día 6</option>
+                <option value="7">Día 7+</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Temperatura (°C)</label>
+              <input type="number" id="secadoMedicionTemperatura" step="0.5" value="28.5" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white font-bold">
+            </div>
+          </div>
+
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Porcentaje de Humedad Medido (%)</label>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Humedad Medida al Cierre del Día (%)</label>
             <div class="relative">
               <input type="number" id="secadoMedicionHumedad" step="0.1" placeholder="Ej. 22.4" class="w-full border-2 border-blue-600 rounded-xl px-3 py-2.5 text-xl font-black text-blue-950 focus:outline-none" required>
               <span class="absolute right-3 top-3 text-xs font-bold text-gray-400">%</span>
             </div>
+            <p class="text-[10px] text-blue-700 mt-1">Registra la humedad final del lote al terminar la jornada de secado.</p>
           </div>
 
           <div>
@@ -336,8 +451,13 @@
             </select>
           </div>
 
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Observaciones / Incidencias del Día</label>
+            <input type="text" id="secadoMedicionObservaciones" placeholder="Ej. Buen viento, volteo regular 4 veces" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs bg-white">
+          </div>
+
           <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-droplet"></i> Registrar Medición de Humedad
+            <i class="fa-solid fa-droplet"></i> Registrar Medición de Humedad y Clima
           </button>
         </form>
 
@@ -605,9 +725,10 @@
       if (benCampo) benCampo.innerHTML = '<option value="">Seleccione campo de procedencia...</option>';
 
       cachedCampos.forEach(c => {
-        sc.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.variedad || 'Café'})</option>`;
-        sacosCampo.innerHTML += `<option value="${c.id}" data-codigo="${c.codigo}" data-nombre="${c.nombre}">${c.codigo} - ${c.nombre}</option>`;
-        if (benCampo) benCampo.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.sector || 'Finca La Peñita'})</option>`;
+        const plantasInfo = c.cantidad_plantas ? ` • ${c.cantidad_plantas} plantas` : '';
+        sc.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.variedad || 'Café'}${plantasInfo})</option>`;
+        sacosCampo.innerHTML += `<option value="${c.id}" data-codigo="${c.codigo}" data-nombre="${c.nombre}">${c.codigo} - ${c.nombre}${plantasInfo}</option>`;
+        if (benCampo) benCampo.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${c.sector || 'Finca La Peñita'}${plantasInfo})</option>`;
       });
 
       renderTrabajadoresSelect(cachedTrabajadores);
@@ -934,6 +1055,28 @@
     }
 
     // --- BENEFICIO & RECEPCIÓN EN BÁSCULA (RN-13 / RN-51 / CLASIFICACIÓN PRIMERA Y SEGUNDA) ---
+    function cambiarOrigenBeneficio(tipo) {
+      document.getElementById("beneficioTipoProveedor").value = tipo;
+      const bFinca = document.getElementById("btnOrigenFinca");
+      const bExt = document.getElementById("btnOrigenExterno");
+      const blkFinca = document.getElementById("bloqueCampoFinca");
+      const blkExt = document.getElementById("bloqueProductorExterno");
+
+      const inactivo = "py-2 px-2 text-xs font-bold rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1";
+      bFinca.className = inactivo;
+      bExt.className = inactivo;
+
+      if (tipo === 'MYRA_CAFE') {
+        bFinca.className = "py-2 px-2 text-xs font-bold rounded-xl border-2 border-emerald-700 bg-emerald-50 text-emerald-900 transition flex items-center justify-center gap-1 shadow-sm";
+        blkFinca.classList.remove("hidden");
+        blkExt.classList.add("hidden");
+      } else {
+        bExt.className = "py-2 px-2 text-xs font-bold rounded-xl border-2 border-amber-600 bg-amber-50 text-amber-950 transition flex items-center justify-center gap-1 shadow-sm";
+        blkFinca.classList.add("hidden");
+        blkExt.classList.remove("hidden");
+      }
+    }
+
     function seleccionarClasificacion(tipo) {
       document.getElementById("beneficioClasificacion").value = tipo;
       const b1 = document.getElementById("btnClasifPrimera");
@@ -978,8 +1121,14 @@
     async function guardarValidacionBeneficio(e) {
       e.preventDefault();
       const fecha = document.getElementById("beneficioFecha").value;
-      const campoId = parseInt(document.getElementById("beneficioCampoSelect").value) || null;
+      const bultos = parseInt(document.getElementById("beneficioCantidadBultos").value) || 1;
+      const tipoProv = document.getElementById("beneficioTipoProveedor").value;
+      const campoId = (tipoProv === "MYRA_CAFE") ? (parseInt(document.getElementById("beneficioCampoSelect").value) || null) : null;
+      const extNombre = (tipoProv === "PRODUCTOR_EXTERNO") ? document.getElementById("beneficioProductorExternoNombre").value.trim() : null;
+      
       const kg = parseFloat(document.getElementById("beneficioKgValidados").value);
+      const kgP1 = parseFloat(document.getElementById("beneficioKgLavadoPrimera").value) || 0.0;
+      const kgS2 = parseFloat(document.getElementById("beneficioKgLavadoSegunda").value) || 0.0;
       const clasif = document.getElementById("beneficioClasificacion").value;
       const verde = parseFloat(document.getElementById("beneficioPctVerde").value) || 0.0;
       const obs = document.getElementById("beneficioObservaciones").value.trim();
@@ -991,12 +1140,15 @@
 
       const payload = {
         fecha: fecha,
+        cantidad_bultos: bultos,
         kg_validados: kg,
         pct_fruta_inmadura: verde,
-        tipo_proveedor: "MYRA_CAFE",
+        tipo_proveedor: tipoProv,
         campo_id: campoId,
+        kg_lavado_primera: kgP1,
+        kg_lavado_segunda: kgS2,
         clasificacion: clasif,
-        observaciones: obs || `Recepción conforme [${clasif}]`,
+        observaciones: obs || `Recepción conforme [${clasif}] - ${bultos} bultos ${extNombre ? '(' + extNombre + ')' : ''}`,
         validado_por: "Encargado de Beneficio Móvil"
       };
 
@@ -1008,9 +1160,11 @@
         });
         const data = await res.json();
         if (data.status === "VALIDADO") {
-          alert(`✅ Lote Emitido Exitosamente:\nCódigo: ${data.lote_codigo}\nClasificación: ${data.clasificacion}\nKg Validados: ${kg} kg\n${data.alerta_mensaje}`);
+          alert(`✅ Lote Emitido Exitosamente:\nCódigo: ${data.lote_codigo}\nBultos: ${bultos} sacos\nClasificación: ${data.clasificacion}\nKg Validados: ${kg} kg\nLavado P1: ${kgP1} kg | S2: ${kgS2} kg\n${data.alerta_mensaje}`);
           document.getElementById("formBeneficio").reset();
           document.getElementById("beneficioFecha").value = new Date().toISOString().split("T")[0];
+          document.getElementById("beneficioCantidadBultos").value = 1;
+          cambiarOrigenBeneficio("MYRA_CAFE");
           seleccionarClasificacion("PRIMERA");
           verificarAlertaFrutaInmadura();
           cargarRecepcionesBeneficioMobile();
@@ -1119,8 +1273,13 @@
       e.preventDefault();
       const loteId = parseInt(document.getElementById("secadoLoteSelect").value);
       const almId = parseInt(document.getElementById("secadoAlmacenSelect").value);
+      const bultos = parseInt(document.getElementById("secadoCantidadBultos").value) || 1;
+      const tipoCafe = document.getElementById("secadoTipoCafe").value;
+      const cat = document.getElementById("secadoCategoriaSelect").value;
       const kg = parseFloat(document.getElementById("secadoKgEntrada").value);
       const hum = parseFloat(document.getElementById("secadoHumedadInicial").value);
+      const temp = parseFloat(document.getElementById("secadoTemperaturaEntrada").value) || 28.0;
+      const clima = document.getElementById("secadoClimaEntrada").value;
 
       if (!loteId || !kg) {
         alert("Seleccione el lote y registre los kg en báscula.");
@@ -1134,15 +1293,21 @@
           lote_id: loteId,
           almacen_id: almId,
           fecha_inicio: new Date().toISOString().split("T")[0],
+          cantidad_bultos: bultos,
+          tipo_cafe_secando: tipoCafe,
+          categoria_cafe: cat,
           peso_inicial_kg: kg,
           humedad_inicial: hum,
+          temperatura_c: temp,
+          clima: clima,
           responsable: "Encargado de Secado Móvil"
         })
       });
       const data = await res.json();
       if (data.status === "SECADO_INICIADO") {
-        alert(`✅ Secado iniciado con ${kg} kg registrados.`);
+        alert(`✅ Secado iniciado con ${kg} kg (${bultos} bultos) registrados.`);
         document.getElementById("formSecadoEntrada").reset();
+        document.getElementById("secadoCantidadBultos").value = 1;
         cargarLotesParaSecado();
       } else {
         alert("Error iniciando secado: " + JSON.stringify(data));
@@ -1152,8 +1317,11 @@
     async function guardarSecadoMedicion(e) {
       e.preventDefault();
       const secId = parseInt(document.getElementById("secadoMedicionLoteSelect").value);
+      const diaNum = parseInt(document.getElementById("secadoMedicionDiaNumero").value) || 1;
+      const temp = parseFloat(document.getElementById("secadoMedicionTemperatura").value) || 28.5;
       const hum = parseFloat(document.getElementById("secadoMedicionHumedad").value);
       const clima = document.getElementById("secadoMedicionClima").value;
+      const obs = document.getElementById("secadoMedicionObservaciones").value.trim();
 
       if (!secId || isNaN(hum)) {
         alert("Seleccione el lote e ingrese la humedad medida.");
@@ -1165,15 +1333,19 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           secado_id: secId,
+          dia_numero: diaNum,
           porcentaje_humedad: hum,
+          humedad_cierre_dia: true,
+          temperatura_c: temp,
           instrumento: "Higrómetro Calibrado Móvil",
           clima: clima,
+          observaciones: obs || `Medición Día ${diaNum} - ${clima}`,
           responsable: "Encargado de Secado Móvil"
         })
       });
       const data = await res.json();
       if (data.status === "MEDICION_REGISTRADA") {
-        alert(`✅ Medición de humedad (${hum}%) registrada.`);
+        alert(`✅ Medición Día ${diaNum} (${hum}% humedad, ${temp}°C) registrada al cierre de jornada.`);
         document.getElementById("formSecadoMedicion").reset();
         cargarLotesParaSecado();
       } else {

@@ -7,7 +7,394 @@
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#143522">
   <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">
+    // ==================== MÓDULO CAMPOS: CREACIÓN CON PLANTAS Y FUSIÓN ====================
+    function abrirModalCrearCampo() {
+      document.getElementById("modalCrearCampo").classList.remove("hidden");
+    }
+    function cerrarModalCrearCampo() {
+      document.getElementById("modalCrearCampo").classList.add("hidden");
+    }
+    async function guardarCrearCampo() {
+      const cod = document.getElementById("campoNuevoCodigo").value.trim().toUpperCase();
+      const nom = document.getElementById("campoNuevoNombre").value.trim();
+      const sec = document.getElementById("campoNuevoSector").value.trim() || "Sector General";
+      const plantas = parseInt(document.getElementById("campoNuevoPlantas").value) || 0;
+      const area = parseFloat(document.getElementById("campoNuevoArea").value) || 20.0;
+      const alt = parseInt(document.getElementById("campoNuevoAltitud").value) || 1100;
+      const varCaf = document.getElementById("campoNuevoVariedad").value.trim() || "Caturra";
+
+      if (!cod || !nom) {
+        alert("Por favor ingrese código y nombre del campo.");
+        return;
+      }
+
+      const res = await fetch("/api/campos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codigo: cod,
+          nombre: nom,
+          sector: sec,
+          cantidad_plantas: plantas,
+          area_tareas: area,
+          altitud_msnm: alt,
+          variedad: varCaf
+        })
+      });
+      const data = await res.json();
+      alert(`Campo creado exitosamente: ${data.nombre} (${data.cantidad_plantas.toLocaleString()} plantas).`);
+      cerrarModalCrearCampo();
+      cargarCampos();
+      cargarDashboardIntegral();
+    }
+
+    function openModalFusionCampos() {
+      const c1 = prompt("Ingrese el Código del Campo 1 a fusionar (ej: CP-01):");
+      if (!c1) return;
+      const c2 = prompt("Ingrese el Código del Campo 2 a fusionar (ej: CP-02):");
+      if (!c2) return;
+      const nuevoNom = prompt("Nombre resultante del campo unificado:", "Campo Unificado");
+      if (!nuevoNom) return;
+
+      fetch("/api/campos/fusionar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codigo_campo1: c1.trim().toUpperCase(),
+          codigo_campo2: c2.trim().toUpperCase(),
+          nombre_nuevo_campo: nuevoNom.trim(),
+          motivo: "Reestructuración agronómica RN-28",
+          autorizado_por: "Administración General"
+        })
+      }).then(r => r.json()).then(data => {
+        alert("Fusión completada: " + (data.mensaje || JSON.stringify(data)));
+        cargarCampos();
+      }).catch(e => alert("Error: " + e.message));
+    }
+
+    // ==================== TRILLADO, TOSTADURÍA, EMPAQUE Y DESPACHO ====================
+    async function abrirModalTrillado() {
+      const res = await fetch("/api/inventario");
+      const lotes = await res.json();
+      const pergaminos = lotes.filter(l => l.estado.includes("PERGAMINO"));
+      const sel = document.getElementById("trilladoLoteSelect");
+      sel.innerHTML = "";
+      if (pergaminos.length === 0) {
+        lotes.forEach(l => { sel.innerHTML += `<option value="${l.id}">${l.lote} (${l.kg_disponibles} kg)</option>`; });
+      } else {
+        pergaminos.forEach(l => { sel.innerHTML += `<option value="${l.id}">${l.lote} (${l.kg_disponibles} kg)</option>`; });
+      }
+      document.getElementById("modalTrillado").classList.remove("hidden");
+    }
+    function cerrarModalTrillado() {
+      document.getElementById("modalTrillado").classList.add("hidden");
+    }
+    async function guardarTrillado() {
+      const loteId = parseInt(document.getElementById("trilladoLoteSelect").value);
+      const bultos = parseInt(document.getElementById("trilladoBultosInput").value);
+      const kgPerg = parseFloat(document.getElementById("trilladoKgPergaminoInput").value);
+      const kgP1 = parseFloat(document.getElementById("trilladoVerdePrimeraInput").value);
+      const kgS2 = parseFloat(document.getElementById("trilladoVerdeSegundaInput").value) || 0;
+      const casc = parseFloat(document.getElementById("trilladoCascarillaInput").value) || 0;
+      const desc = parseFloat(document.getElementById("trilladoDescarteInput").value) || 0;
+
+      const res = await fetch("/api/trillado", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lote_pergamino_id: loteId,
+          cantidad_bultos_recibidos: bultos,
+          kg_pergamino: kgPerg,
+          kg_oro_primera: kgP1,
+          kg_oro_segunda: kgS2,
+          kg_cascarilla: casc,
+          kg_descarte: desc,
+          responsable: "Encargado Tostaduría"
+        })
+      });
+      const data = await res.json();
+      alert(`Trillado completado con éxito.\nLote Oro 1ra: ${data.lote_oro_primera}\nLote Oro 2da: ${data.lote_oro_segunda}\nMerma: ${data.merma_kg} kg (${data.merma_pct}%)`);
+      cerrarModalTrillado();
+      cargarProcesosTransformacion();
+      cargarInventario();
+      cargarDashboardIntegral();
+    }
+
+    async function abrirModalTostado() {
+      const res = await fetch("/api/inventario");
+      const lotes = await res.json();
+      const verdes = lotes.filter(l => l.estado.includes("ORO") || l.estado.includes("VERDE"));
+      const sel = document.getElementById("tostadoLoteSelect");
+      sel.innerHTML = "";
+      if (verdes.length === 0) {
+        lotes.forEach(l => { sel.innerHTML += `<option value="${l.id}">${l.lote} (${l.kg_disponibles} kg)</option>`; });
+      } else {
+        verdes.forEach(l => { sel.innerHTML += `<option value="${l.id}">${l.lote} (${l.kg_disponibles} kg)</option>`; });
+      }
+      document.getElementById("modalTostado").classList.remove("hidden");
+    }
+    function cerrarModalTostado() {
+      document.getElementById("modalTostado").classList.add("hidden");
+    }
+    async function guardarTostado() {
+      const loteId = parseInt(document.getElementById("tostadoLoteSelect").value);
+      const cat = document.getElementById("tostadoCategoriaSelect").value;
+      const grado = document.getElementById("tostadoGradoSelect").value;
+      const kgOro = parseFloat(document.getElementById("tostadoKgVerdeInput").value);
+      const kgTost = parseFloat(document.getElementById("tostadoKgTostadoInput").value);
+
+      const res = await fetch("/api/tostado", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lote_oro_id: loteId,
+          categoria: cat,
+          kg_oro: kgOro,
+          kg_tostado: kgTost,
+          grado_tueste: grado,
+          responsable: "Tostador Maestro"
+        })
+      });
+      const data = await res.json();
+      alert(`Batch de tueste registrado.\nLote Tostado: ${data.lote_tostado}\nCategoría: ${cat}\nMerma Tueste: ${data.merma_pct}% (${data.merma_kg} kg)`);
+      cerrarModalTostado();
+      cargarProcesosTransformacion();
+      cargarInventario();
+      cargarDashboardIntegral();
+    }
+
+    async function abrirModalEmpaque() {
+      const [resInv, resSkus] = await Promise.all([
+        fetch("/api/inventario"),
+        fetch("/api/skus")
+      ]);
+      const lotes = await resInv.json();
+      const skus = await resSkus.json();
+
+      const tostados = lotes.filter(l => l.estado.includes("TOSTADO"));
+      const selLote = document.getElementById("empaqueLoteTostadoSelect");
+      selLote.innerHTML = "";
+      if (tostados.length === 0) {
+        lotes.forEach(l => { selLote.innerHTML += `<option value="${l.id}">${l.lote} (${l.kg_disponibles} kg)</option>`; });
+      } else {
+        tostados.forEach(l => { selLote.innerHTML += `<option value="${l.id}">${l.lote} (${l.kg_disponibles} kg)</option>`; });
+      }
+
+      const selSku = document.getElementById("empaqueSkuSelect");
+      selSku.innerHTML = "";
+      skus.forEach(s => {
+        selSku.innerHTML += `<option value="${s.id}">${s.sku} - ${s.nombre} (${(s.peso_neto_kg * 1000).toFixed(0)}g)</option>`;
+      });
+
+      document.getElementById("modalEmpaque").classList.remove("hidden");
+    }
+    function cerrarModalEmpaque() {
+      document.getElementById("modalEmpaque").classList.add("hidden");
+    }
+    async function guardarEmpaque() {
+      const loteId = parseInt(document.getElementById("empaqueLoteTostadoSelect").value);
+      const skuId = parseInt(document.getElementById("empaqueSkuSelect").value);
+      const formato = document.getElementById("empaqueFormatoSelect").value;
+      const unidades = parseInt(document.getElementById("empaqueUnidadesInput").value);
+
+      const res = await fetch("/api/empaque", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lote_tostado_id: loteId,
+          sku_id: skuId,
+          formato: formato,
+          unidades: unidades,
+          responsable: "Encargado de Empaque"
+        })
+      });
+      const data = await res.json();
+      alert(`Empaque finalizado.\nLote Empacado: ${data.lote_empacado}\nPaquetes obtenidos: ${data.paquetes_obtenidos}\nKilos empacados: ${data.kg_empacados} kg`);
+      cerrarModalEmpaque();
+      cargarProcesosTransformacion();
+      cargarInventario();
+      cargarDashboardIntegral();
+    }
+
+    async function abrirModalDespachoFinal() {
+      const res = await fetch("/api/skus");
+      const skus = await res.json();
+      const sel = document.getElementById("despachoSkuSelect");
+      sel.innerHTML = "";
+      skus.forEach(s => {
+        sel.innerHTML += `<option value="${s.id}">${s.sku} - ${s.nombre}</option>`;
+      });
+      document.getElementById("modalDespachoFinal").classList.remove("hidden");
+    }
+    function cerrarModalDespachoFinal() {
+      document.getElementById("modalDespachoFinal").classList.add("hidden");
+    }
+    async function guardarDespachoFinal() {
+      const skuId = parseInt(document.getElementById("despachoSkuSelect").value);
+      const cliente = document.getElementById("despachoClienteInput").value.trim();
+      const paq = parseInt(document.getElementById("despachoPaquetesInput").value);
+      const doc = document.getElementById("despachoDocInput").value.trim();
+      const chofer = document.getElementById("despachoChoferInput").value.trim();
+      const placa = document.getElementById("despachoPlacaInput").value.trim();
+      const obs = document.getElementById("despachoObsInput").value.trim();
+
+      if (!cliente || !paq) {
+        alert("Indique cliente de destino y cantidad de paquetes.");
+        return;
+      }
+
+      const res = await fetch("/api/despacho-final", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sku_id: skuId,
+          cliente_destino: cliente,
+          paquetes_despachados: paq,
+          documento_despacho: doc,
+          chofer: chofer,
+          vehiculo_placa: placa,
+          responsable: "Encargado de Despacho",
+          observaciones: obs
+        })
+      });
+      const data = await res.json();
+      alert(`Despacho confirmado.\nCliente: ${data.cliente_destino}\nPaquetes entregados: ${data.paquetes_despachados}\nTotal Kilos: ${data.total_kg_despachados} kg`);
+      cerrarModalDespachoFinal();
+      cargarProcesosTransformacion();
+      cargarInventario();
+    }
+
+    async function cargarProcesosTransformacion() {
+      const tbody = document.getElementById("tablaProcesosTransformacion");
+      if (!tbody) return;
+      try {
+        const res = await fetch("/api/procesos");
+        const list = await res.json();
+        tbody.innerHTML = "";
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-gray-400">Sin procesos industriales registrados aún.</td></tr>';
+          return;
+        }
+        list.forEach(p => {
+          const salidaTxt = p.paquetes_obtenidos ? `${p.paquetes_obtenidos} paq (${p.kg_salida} kg)` : `${p.kg_salida} kg`;
+          const mermaTxt = p.merma_pct ? `${p.merma_pct}% (${p.merma_kg} kg)` : "-";
+          const badgeColor = p.tipo_proceso === "TRILLADO" ? "bg-emerald-100 text-emerald-800" : (p.tipo_proceso === "TOSTADO" ? "bg-amber-100 text-amber-800" : (p.tipo_proceso === "EMPAQUE" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"));
+          tbody.innerHTML += `
+            <tr class="hover:bg-gray-50">
+              <td class="py-2.5 px-3 font-mono text-gray-600">${p.fecha.substring(0, 10)}</td>
+              <td class="py-2.5 px-3"><span class="${badgeColor} text-[10px] font-bold px-2 py-0.5 rounded-full">${p.tipo_proceso}</span></td>
+              <td class="py-2.5 px-3 font-mono text-gray-700">${p.lote_entrada || "-"}</td>
+              <td class="py-2.5 px-3 font-mono font-bold text-gray-900">${p.sku_nombre || p.lote_salida || "-"}</td>
+              <td class="py-2.5 px-3 text-right font-medium">${p.kg_entrada} kg</td>
+              <td class="py-2.5 px-3 text-right font-black text-emerald-950">${salidaTxt}</td>
+              <td class="py-2.5 px-3 text-right font-bold text-amber-900">${mermaTxt}</td>
+              <td class="py-2.5 px-3 text-gray-700">${p.cliente_destino ? 'Cliente: ' + p.cliente_destino : (p.responsable || 'Encargado')}</td>
+            </tr>
+          `;
+        });
+      } catch (e) {
+        console.error("Error cargando procesos:", e);
+      }
+    }
+
+    // ==================== TRASLADOS EN 6 RUTAS OPERATIVAS ====================
+    function actualizarFormularioRuta() {
+      const ruta = document.getElementById("rutaTipoSelect").value;
+      document.getElementById("rutaClienteDiv").classList.toggle("hidden", ruta !== "FINCA_A_CLIENTES");
+    }
+
+    function abrirModalRegistrarRuta() {
+      actualizarFormularioRuta();
+      document.getElementById("modalRegistrarRuta").classList.remove("hidden");
+    }
+    function cerrarModalRegistrarRuta() {
+      document.getElementById("modalRegistrarRuta").classList.add("hidden");
+    }
+    async function guardarRegistrarRuta() {
+      const tipoRuta = document.getElementById("rutaTipoSelect").value;
+      const codLote = document.getElementById("rutaCodigoLoteInput").value.trim().toUpperCase() || "CARGA-GEN";
+      const tipoCafe = document.getElementById("rutaTipoCafeSelect").value;
+      const bultos = parseInt(document.getElementById("rutaBultosInput").value) || 1;
+      const kilos = parseFloat(document.getElementById("rutaKilosInput").value);
+      const chofer = document.getElementById("rutaChoferInput").value.trim();
+      const placa = document.getElementById("rutaPlacaInput").value.trim();
+      const cliente = document.getElementById("rutaClienteInput").value.trim();
+      const obs = document.getElementById("rutaObsInput").value.trim();
+
+      if (isNaN(kilos) || !chofer || !placa) {
+        alert("Complete todos los campos obligatorios del traslado.");
+        return;
+      }
+
+      const res = await fetch("/api/traslados/registrar-ruta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo_ruta: tipoRuta,
+          codigo_lote: codLote,
+          tipo_cafe: tipoCafe,
+          cantidad_bultos: bultos,
+          total_kg: kilos,
+          chofer: chofer,
+          vehiculo_placa: placa,
+          cliente_destino_nombre: cliente || null,
+          observaciones: obs
+        })
+      });
+      const data = await res.json();
+      alert(`Traslado registrado exitosamente.\nGuía: ${data.numero_guia}\nRuta: ${data.tipo_ruta}\nBultos: ${data.cantidad_bultos} (${data.total_kg} kg)\nChofer: ${data.chofer}`);
+      cerrarModalRegistrarRuta();
+      cargarHistorialRutas();
+      cargarDashboardIntegral();
+    }
+
+    async function cargarHistorialRutas() {
+      const tbody = document.getElementById("tablaHistorialRutas");
+      if (!tbody) return;
+      try {
+        const res = await fetch("/api/traslados");
+        const list = await res.json();
+        tbody.innerHTML = "";
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-gray-400">No hay traslados registrados aún.</td></tr>';
+          return;
+        }
+        list.forEach(t => {
+          const rutaLabels = {
+            "CAMPO_A_BENEFICIO": "Campo ➔ Beneficio",
+            "BENEFICIO_A_SECADO": "Beneficio ➔ Secado (Baní)",
+            "SECADO_A_ALMACEN_FINCA": "Secado ➔ Almacén Finca",
+            "FINCA_A_TOSTADURIA": "Finca ➔ Tostaduría",
+            "TOSTADURIA_A_SANTO_DOMINGO": "Tostaduría ➔ Sto. Domingo",
+            "FINCA_A_CLIENTES": "Finca ➔ Clientes",
+            "INTERNO": `${t.origen} ➔ ${t.destino}`
+          };
+          const rutaTxt = rutaLabels[t.tipo_ruta] || `${t.origen} ➔ ${t.destino}`;
+          tbody.innerHTML += `
+            <tr class="hover:bg-emerald-50/40">
+              <td class="py-2.5 px-3 font-mono font-bold text-gray-900">${t.numero_guia}</td>
+              <td class="py-2.5 px-3 font-semibold text-emerald-950">${rutaTxt}</td>
+              <td class="py-2.5 px-3 font-mono text-gray-600">${t.fecha_despacho ? t.fecha_despacho.substring(0, 10) : "-"}</td>
+              <td class="py-2.5 px-3 font-mono text-[11px] font-bold text-gray-700">${t.codigo_lote}</td>
+              <td class="py-2.5 px-3 text-center"><span class="bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded">${t.tipo_cafe}</span></td>
+              <td class="py-2.5 px-3 text-center font-bold text-gray-800">${t.cantidad_bultos}</td>
+              <td class="py-2.5 px-3 text-right font-black text-emerald-900">${t.kg_despachados} kg</td>
+              <td class="py-2.5 px-3 text-gray-700 text-[11px]">${t.chofer} (${t.vehiculo_placa})</td>
+              <td class="py-2.5 px-3 text-center">
+                <span class="text-[10px] ${t.estado === 'RECIBIDO' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'} font-bold px-2 py-0.5 rounded-full">
+                  ${t.estado}
+                </span>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (e) {
+        console.error("Error cargando traslados:", e);
+      }
+    }
+
+  </script>
   <!-- FontAwesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Chart.js -->
@@ -348,9 +735,14 @@
             <h3 class="text-lg font-black text-gray-900">Catálogo Oficial de los 25 Campos (Anexo A)</h3>
             <p class="text-xs text-gray-500">Haga clic en cualquier fila para ver el historial detallado de pesajes, fechas, recolectores y rendimiento de café tostado atribuible.</p>
           </div>
-          <button onclick="openModalFusionCampos()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
-            <i class="fa-solid fa-object-ungroup"></i> Fusionar Campos (RN-28)
-          </button>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="abrirModalCrearCampo()" class="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+              <i class="fa-solid fa-plus-circle"></i> Nuevo Campo (con Plantas)
+            </button>
+            <button onclick="openModalFusionCampos()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+              <i class="fa-solid fa-object-ungroup"></i> Fusionar Campos (RN-28)
+            </button>
+          </div>
         </div>
 
         <!-- BARRA DE BÚSQUEDA, FILTROS Y ORDENACIÓN -->
@@ -386,6 +778,7 @@
             <select id="ordenarCamposCriterio" onchange="filtrarYOrdenarCampos()" class="border border-gray-300 rounded-xl px-3 py-2 bg-white font-bold text-emerald-900">
               <option value="codigo_asc">Código (A - Z)</option>
               <option value="nombre_asc">Nombre (A - Z)</option>
+              <option value="plantas_desc">Cantidad de Plantas (Mayor a Menor)</option>
               <option value="area_desc">Área en Tareas (Mayor a Menor)</option>
               <option value="area_asc">Área en Tareas (Menor a Mayor)</option>
               <option value="cosecha_desc">Total Cosechado (Mayor a Menor)</option>
@@ -402,6 +795,7 @@
                 <th class="py-3 px-3 cursor-pointer" onclick="toggleOrdenColumna('codigo')">Código <i class="fa-solid fa-sort text-gray-400"></i></th>
                 <th class="py-3 px-3 cursor-pointer" onclick="toggleOrdenColumna('nombre')">Nombre del Campo <i class="fa-solid fa-sort text-gray-400"></i></th>
                 <th class="py-3 px-3">Sector</th>
+                <th class="py-3 px-3 text-right cursor-pointer" onclick="toggleOrdenColumna('cantidad_plantas')">Plantas <i class="fa-solid fa-sort text-gray-400"></i></th>
                 <th class="py-3 px-3 text-right cursor-pointer" onclick="toggleOrdenColumna('area_tareas')">Área (Tareas) <i class="fa-solid fa-sort text-gray-400"></i></th>
                 <th class="py-3 px-3 text-right">Altitud</th>
                 <th class="py-3 px-3">Variedad</th>
@@ -435,21 +829,75 @@
           <form onsubmit="ejecutarValidacionBeneficio(event)" class="space-y-3.5 text-xs">
             <div>
               <label class="block font-bold text-gray-700 mb-1">Fecha</label>
-              <input type="date" id="bfFecha" value="2026-11-09" class="w-full border border-gray-300 rounded-xl px-3 py-2">
+              <input type="date" id="bfFecha" value="2026-11-09" class="w-full border border-gray-300 rounded-xl px-3 py-2 font-medium">
             </div>
+
+            <!-- Identificar de dónde viene el café -->
             <div>
-              <label class="block font-bold text-gray-700 mb-1">Kg Validados en Báscula de Beneficio</label>
-              <input type="number" id="bfKgValidados" value="1000.0" step="0.1" class="w-full border-2 border-emerald-700 rounded-xl px-3 py-2.5 text-base font-black text-emerald-900">
+              <label class="block font-bold text-gray-700 mb-1">Origen del Café</label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-1.5 p-2 rounded-xl border border-emerald-300 bg-emerald-50 cursor-pointer">
+                  <input type="radio" name="bfOrigen" id="bfOrigenFinca" value="MYRA_CAFE" checked onchange="toggleOrigenBeneficio()" class="text-emerald-700">
+                  <span class="font-bold text-emerald-950 text-[11px]">Misma Finca (Myra)</span>
+                </label>
+                <label class="flex items-center gap-1.5 p-2 rounded-xl border border-gray-200 bg-white cursor-pointer">
+                  <input type="radio" name="bfOrigen" id="bfOrigenExterno" value="PRODUCTOR_EXTERNO" onchange="toggleOrigenBeneficio()" class="text-emerald-700">
+                  <span class="font-bold text-gray-700 text-[11px]">Productor Externo</span>
+                </label>
+              </div>
             </div>
+
+            <!-- Selector de Campo si es de la Finca -->
+            <div id="bfCampoDiv">
+              <label class="block font-bold text-gray-700 mb-1">Campo de Origen (Finca La Peñita)</label>
+              <select id="bfCampoSelect" class="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white font-bold text-emerald-950">
+                <!-- Se puebla dinámicamente con los 25 campos -->
+              </select>
+            </div>
+
+            <!-- Productor externo si aplica -->
+            <div id="bfExternoDiv" class="hidden">
+              <label class="block font-bold text-gray-700 mb-1">Nombre Productor Externo</label>
+              <input type="text" id="bfProductorExternoNombre" placeholder="Nombre de productor externo" class="w-full border border-gray-300 rounded-xl px-3 py-2">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-bold text-gray-700 mb-1">Cantidad de Bultos</label>
+                <input type="number" id="bfCantidadBultos" value="10" min="1" class="w-full border border-gray-300 rounded-xl px-3 py-2 font-bold text-gray-800">
+              </div>
+              <div>
+                <label class="block font-bold text-gray-700 mb-1">Kg Báscula Beneficio</label>
+                <input type="number" id="bfKgValidados" value="1000.0" step="0.1" class="w-full border-2 border-emerald-700 rounded-xl px-3 py-2 font-black text-emerald-900">
+              </div>
+            </div>
+
+            <!-- Opciones para registrar kg obtenidos después de lavar (Primera y Segunda) -->
+            <div class="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl space-y-2">
+              <span class="font-bold text-emerald-950 block text-[11px]"><i class="fa-solid fa-water text-emerald-700"></i> Kg Obtenidos Después de Lavar:</span>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-medium text-emerald-950 text-[10px]">Café de Primera (kg)</label>
+                  <input type="number" id="bfKgLavadoPrimera" value="800.0" step="0.1" class="w-full border border-emerald-300 rounded-lg px-2.5 py-1.5 font-bold text-emerald-900">
+                </div>
+                <div>
+                  <label class="block font-medium text-emerald-950 text-[10px]">Café de Segunda (kg)</label>
+                  <input type="number" id="bfKgLavadoSegunda" value="150.0" step="0.1" class="w-full border border-emerald-300 rounded-lg px-2.5 py-1.5 font-bold text-amber-900">
+                </div>
+              </div>
+            </div>
+
             <div>
               <label class="block font-bold text-gray-700 mb-1">% de Fruta Inmadura (Muestreo Manual)</label>
               <input type="number" id="bfPctInmadura" value="4.2" step="0.1" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold">
               <span class="text-[10px] text-gray-500">Alerta automática si supera 5.0%</span>
             </div>
+
             <div>
               <label class="block font-bold text-gray-700 mb-1">Observaciones</label>
               <input type="text" id="bfObs" placeholder="Recepción conforme" class="w-full border border-gray-300 rounded-xl px-3 py-2">
             </div>
+
             <button type="submit" class="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold py-3 rounded-xl shadow transition">
               Validar y Emitir Lote
             </button>
@@ -466,9 +914,11 @@
                 <tr>
                   <th class="py-2.5 px-3">Lote Generado</th>
                   <th class="py-2.5 px-3">Fecha</th>
-                  <th class="py-2.5 px-3 text-right">Kg Campo</th>
+                  <th class="py-2.5 px-3">Origen / Campo</th>
+                  <th class="py-2.5 px-3 text-center">Bultos</th>
                   <th class="py-2.5 px-3 text-right">Kg Beneficio</th>
-                  <th class="py-2.5 px-3 text-right">Diferencia</th>
+                  <th class="py-2.5 px-3 text-right">Lavado 1ra (kg)</th>
+                  <th class="py-2.5 px-3 text-right">Lavado 2da (kg)</th>
                   <th class="py-2.5 px-3 text-center">% Inmadura</th>
                   <th class="py-2.5 px-3">Estado</th>
                 </tr>
@@ -486,14 +936,19 @@
     <!-- ==================== SECCIÓN 4: SECADO EN BANÍ & LA PEÑITA ==================== -->
     <div id="tab-secado" class="tab-content hidden space-y-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
-        <div class="flex justify-between items-center mb-6 pb-3 border-b border-gray-200">
+        <div class="flex flex-wrap justify-between items-center mb-6 pb-3 border-b border-gray-200 gap-3">
           <div>
             <h3 class="text-base font-black text-gray-900">Control de Secado (Baní y La Peñita)</h3>
-            <p class="text-xs text-gray-500">RN-30a a RN-30d: Rango objetivo de humedad 10.0% a 12.5%. Lotes fuera de rango pasan a Cuarentena.</p>
+            <p class="text-xs text-gray-500">RN-30a a RN-30d: Registro diario de bultos recibidos, tipo de café, mediciones de humedad al cierre del día, clima y temperatura.</p>
           </div>
-          <button onclick="abrirModalMedirHumedad()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
-            <i class="fa-solid fa-droplet"></i> Registrar Medición de Humedad
-          </button>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="abrirModalIniciarSecadoWeb()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+              <i class="fa-solid fa-sun"></i> Iniciar Lote de Secado Diario
+            </button>
+            <button onclick="abrirModalMedirHumedad()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl shadow transition flex items-center gap-1.5">
+              <i class="fa-solid fa-droplet"></i> Registrar Humedad al Cierre del Día
+            </button>
+          </div>
         </div>
 
         <div class="overflow-x-auto">
@@ -501,11 +956,14 @@
             <thead class="bg-gray-50 text-gray-600 uppercase border-b border-gray-200">
               <tr>
                 <th class="py-3 px-3">Lote</th>
-                <th class="py-3 px-3">Ubicación de Secado</th>
+                <th class="py-3 px-3">Ubicación</th>
+                <th class="py-3 px-3 text-center">Bultos</th>
+                <th class="py-3 px-3">Tipo & Categoría</th>
                 <th class="py-3 px-3">Fecha Inicio</th>
-                <th class="py-3 px-3 text-right">Peso Inicial</th>
-                <th class="py-3 px-3 text-center">Humedad Actual</th>
-                <th class="py-3 px-3 text-center">Días en Patio</th>
+                <th class="py-3 px-3 text-right">Peso Puesto a Secar</th>
+                <th class="py-3 px-3 text-center">Humedad Cierre / Actual</th>
+                <th class="py-3 px-3">Clima / Temp</th>
+                <th class="py-3 px-3 text-center">Días Patio</th>
                 <th class="py-3 px-3 text-center">Estado</th>
                 <th class="py-3 px-3 text-center">Acción</th>
               </tr>
@@ -555,30 +1013,94 @@
     <!-- ==================== SECCIÓN 6: TRILLADO & TOSTADURÍA ==================== -->
     <div id="tab-transformacion" class="tab-content hidden space-y-6">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
-        <h3 class="text-base font-black text-gray-900 mb-2">Transformación Industrial: Trillado y Tostaduría</h3>
-        <p class="text-xs text-gray-500 mb-4">Balance de masa F-05 y F-06. Mermas de conversión de pergamino a oro y tostado.</p>
+        <h3 class="text-base font-black text-gray-900 mb-2">Transformación Industrial, Tostaduría y Despacho</h3>
+        <p class="text-xs text-gray-500 mb-4">Control operativo de bultos y kilos recibidos, café verde de primera y segunda obtenido en cada trillado, tueste por categoría, empaque por SKU y despacho final.</p>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="p-5 bg-gray-50 rounded-2xl border border-gray-200">
-            <h4 class="font-bold text-sm text-gray-800 mb-3 flex items-center gap-2">
-              <i class="fa-solid fa-cubes-stacked text-sicaf-green"></i> Trillado (Pergamino -> Oro)
-            </h4>
-            <p class="text-xs text-gray-600 mb-3">Convierte pergamino seco en café oro más subproductos (cascarilla y pasilla).</p>
-            <button onclick="alert('Trillado ejecutado según balance de masa PA-04.')" class="w-full bg-gray-800 hover:bg-black text-white font-bold text-xs py-2.5 rounded-xl shadow">
-              Registrar Batch de Trillado
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- 1. TRILLADO -->
+          <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200 flex flex-col justify-between">
+            <div>
+              <h4 class="font-bold text-xs text-gray-800 mb-1.5 flex items-center gap-1.5">
+                <i class="fa-solid fa-cubes-stacked text-emerald-800"></i> 1. Trillado de Pergamino
+              </h4>
+              <p class="text-[11px] text-gray-600 mb-3">Registra bultos y kilos recibidos, obteniendo café verde de 1ra y 2da más cascarilla y descarte.</p>
+            </div>
+            <button onclick="abrirModalTrillado()" class="w-full bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs py-2.5 rounded-xl shadow">
+              Registrar Trillado
             </button>
           </div>
 
-          <div class="p-5 bg-gray-50 rounded-2xl border border-gray-200">
-            <h4 class="font-bold text-sm text-gray-800 mb-3 flex items-center gap-2">
-              <i class="fa-solid fa-fire-burner text-amber-700"></i> Tostaduría Central
-            </h4>
-            <p class="text-xs text-gray-600 mb-3">Tostado de café oro. Mermas por evaporación y pirólisis según perfil (Claro, Medio, Oscuro).</p>
-            <button onclick="alert('Tostado ejecutado con perfil Medio (merma 16.01%).')" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs py-2.5 rounded-xl shadow">
-              Registrar Batch de Tueste
+          <!-- 2. TOSTADURÍA -->
+          <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200 flex flex-col justify-between">
+            <div>
+              <h4 class="font-bold text-xs text-gray-800 mb-1.5 flex items-center gap-1.5">
+                <i class="fa-solid fa-fire-burner text-amber-700"></i> 2. Tostaduría Central
+              </h4>
+              <p class="text-[11px] text-gray-600 mb-3">Registra cantidad que pasa a tueste de cada categoría (Primera / Segunda) y peso tostado obtenido.</p>
+            </div>
+            <button onclick="abrirModalTostado()" class="w-full bg-amber-800 hover:bg-amber-900 text-white font-bold text-xs py-2.5 rounded-xl shadow">
+              Registrar Batch Tueste
+            </button>
+          </div>
+
+          <!-- 3. EMPAQUE -->
+          <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200 flex flex-col justify-between">
+            <div>
+              <h4 class="font-bold text-xs text-gray-800 mb-1.5 flex items-center gap-1.5">
+                <i class="fa-solid fa-box-open text-blue-700"></i> 3. Empaque por SKU
+              </h4>
+              <p class="text-[11px] text-gray-600 mb-3">Registra paquetes obtenidos de cada producto de los 6 SKUs oficiales (Insurrecto y El Vecino).</p>
+            </div>
+            <button onclick="abrirModalEmpaque()" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs py-2.5 rounded-xl shadow">
+              Registrar Empaque
+            </button>
+          </div>
+
+          <!-- 4. DESPACHO FINAL -->
+          <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200 flex flex-col justify-between">
+            <div>
+              <h4 class="font-bold text-xs text-gray-800 mb-1.5 flex items-center gap-1.5">
+                <i class="fa-solid fa-truck-fast text-purple-700"></i> 4. Despacho Final
+              </h4>
+              <p class="text-[11px] text-gray-600 mb-3">Registra despacho de producto final hacia clientes o distribución con chofer, placa y conduce.</p>
+            </div>
+            <button onclick="abrirModalDespachoFinal()" class="w-full bg-purple-800 hover:bg-purple-900 text-white font-bold text-xs py-2.5 rounded-xl shadow">
+              Registrar Despacho
             </button>
           </div>
         </div>
+
+        <!-- TABLA HISTORIAL DE PROCESOS -->
+        <div class="mt-6">
+          <div class="flex justify-between items-center mb-3">
+            <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-clock-rotate-left text-sicaf-green"></i> Historial de Operaciones de Transformación
+            </h4>
+            <button onclick="cargarProcesosTransformacion()" class="text-[10px] text-emerald-800 hover:underline font-bold">
+              <i class="fa-solid fa-rotate-right"></i> Actualizar
+            </button>
+          </div>
+          <div class="overflow-x-auto border border-gray-200 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-gray-100 text-gray-700 uppercase">
+                <tr>
+                  <th class="py-2.5 px-3">Fecha</th>
+                  <th class="py-2.5 px-3">Proceso</th>
+                  <th class="py-2.5 px-3">Lote Entrada / Origen</th>
+                  <th class="py-2.5 px-3">Lote Salida / SKU</th>
+                  <th class="py-2.5 px-3 text-right">Entrada</th>
+                  <th class="py-2.5 px-3 text-right">Salida / Paquetes</th>
+                  <th class="py-2.5 px-3 text-right">Merma / Rend.</th>
+                  <th class="py-2.5 px-3">Responsable / Destino</th>
+                </tr>
+              </thead>
+              <tbody id="tablaProcesosTransformacion" class="divide-y divide-gray-100">
+                <!-- Dinámico -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -622,6 +1144,42 @@
             </thead>
             <tbody id="tablaInventarioCompleto" class="divide-y divide-gray-100">
               <!-- Cargado dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: REGISTRO DE TRASLADOS EN LAS 6 RUTAS OPERATIVAS -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-sicaf">
+        <div class="flex flex-wrap justify-between items-center mb-4 pb-3 border-b border-gray-200 gap-3">
+          <div>
+            <h3 class="text-base font-black text-gray-900 flex items-center gap-2">
+              <i class="fa-solid fa-truck-ramp-box text-emerald-800"></i> Registro de Traslados en las 6 Rutas Operativas
+            </h3>
+            <p class="text-xs text-gray-500">Rutas: Campo ➔ Beneficio, Beneficio ➔ Secado, Secado ➔ Almacén Finca, Finca ➔ Tostaduría, Tostaduría ➔ Santo Domingo, Finca ➔ Clientes.</p>
+          </div>
+          <button onclick="abrirModalRegistrarRuta()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-4 py-2 rounded-xl shadow flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-route"></i> Registrar Traslado de Ruta
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-emerald-50/70 text-emerald-950 uppercase border-b border-emerald-200 font-bold">
+              <tr>
+                <th class="py-2.5 px-3">N° Guía</th>
+                <th class="py-2.5 px-3">Ruta Operativa</th>
+                <th class="py-2.5 px-3">Fecha</th>
+                <th class="py-2.5 px-3">Lote / Código</th>
+                <th class="py-2.5 px-3 text-center">Tipo Café</th>
+                <th class="py-2.5 px-3 text-center">Bultos</th>
+                <th class="py-2.5 px-3 text-right">Kilos</th>
+                <th class="py-2.5 px-3">Chofer & Placa</th>
+                <th class="py-2.5 px-3 text-center">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="tablaHistorialRutas" class="divide-y divide-gray-100">
+              <!-- Dinámico -->
             </tbody>
           </table>
         </div>
@@ -675,15 +1233,27 @@
         <!-- HEADER DE NÓMINA -->
         <div class="flex flex-wrap justify-between items-center mb-4 pb-3 border-b border-gray-200 gap-3">
           <div>
-            <h3 class="text-lg font-black text-gray-900">Liquidación Semanal y Administración de Tarifas</h3>
-            <p class="text-xs text-gray-500">Gestione tarifas por kilo y por jornada, registre adelantos/deducciones y liquide nóminas inmutables.</p>
+            <h3 class="text-lg font-black text-gray-900">Liquidación de Nómina de Cosecha</h3>
+            <p class="text-xs text-gray-500">Filtrado por rango de fechas (Desde - Hasta), transparencia de tarifa por día y kilo, liquidación individual sin requerir cuadrilla.</p>
           </div>
+          
+          <!-- Filtro de Período Desde - Hasta -->
+          <div class="flex flex-wrap items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 text-xs">
+            <span class="font-bold text-gray-700">Período:</span>
+            <input type="date" id="nominaFechaDesde" value="2026-11-01" class="border border-gray-300 rounded-lg px-2 py-1 font-bold text-gray-800 bg-white">
+            <span class="text-gray-500">hasta</span>
+            <input type="date" id="nominaFechaHasta" value="2026-11-09" class="border border-gray-300 rounded-lg px-2 py-1 font-bold text-gray-800 bg-white">
+            <button onclick="cargarNomina()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold px-3 py-1 rounded-lg flex items-center gap-1">
+              <i class="fa-solid fa-filter"></i> Filtrar
+            </button>
+          </div>
+
           <div class="flex flex-wrap gap-2">
             <button onclick="abrirModalConfigurarTarifas()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5">
               <i class="fa-solid fa-money-bill-wave"></i> Configurar Tarifas
             </button>
             <button onclick="abrirModalAjusteNomina()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5">
-              <i class="fa-solid fa-hand-holding-dollar"></i> Registrar Adelanto / Bono
+              <i class="fa-solid fa-hand-holding-dollar"></i> Adelanto / Bono
             </button>
             <button onclick="window.print()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs px-3 py-2 rounded-xl border border-gray-300 flex items-center gap-1.5">
               <i class="fa-solid fa-print"></i> Imprimir Volantes
@@ -718,12 +1288,12 @@
             <thead class="bg-gray-100 text-gray-700 uppercase border-b border-gray-200">
               <tr>
                 <th class="py-3 px-3">Recolector</th>
-                <th class="py-3 px-3">Cuadrilla</th>
                 <th class="py-3 px-3 text-right">Kg Cosechados</th>
                 <th class="py-3 px-3 text-right">Tarifa Kg</th>
                 <th class="py-3 px-3 text-right">Subtotal Kg</th>
                 <th class="py-3 px-3 text-right">Días Jornada</th>
-                <th class="py-3 px-3 text-right">Subtotal Jornada</th>
+                <th class="py-3 px-3 text-right">Tarifa RD$/Día</th>
+                <th class="py-3 px-3 text-right">Subtotal Días</th>
                 <th class="py-3 px-3 text-right font-bold">Total Bruto</th>
                 <th class="py-3 px-3 text-right text-red-700">Adelantos RD$</th>
                 <th class="py-3 px-3 text-right font-black text-emerald-950">Neto a Pagar RD$</th>
@@ -1136,6 +1706,464 @@
     </div>
   </div>
 
+
+  <!-- ==================== MODAL: CREAR CAMPO CON CANTIDAD DE PLANTAS ==================== -->
+  <div id="modalCrearCampo" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-seedling text-emerald-800"></i> Registrar Nuevo Campo
+        </h3>
+        <button onclick="cerrarModalCrearCampo()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 my-4 text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Código</label>
+            <input type="text" id="campoNuevoCodigo" placeholder="Ej: CP-26" class="w-full border border-gray-300 rounded-xl p-2 font-mono font-bold uppercase">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Sector</label>
+            <input type="text" id="campoNuevoSector" placeholder="Ej: Sector 2" class="w-full border border-gray-300 rounded-xl p-2">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Nombre del Campo</label>
+          <input type="text" id="campoNuevoNombre" placeholder="Ej: La Loma Nueva" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-emerald-900 mb-1">Cantidad de Plantas</label>
+            <input type="number" id="campoNuevoPlantas" value="1200" min="0" class="w-full border-2 border-emerald-600 rounded-xl p-2 font-black text-emerald-950">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Área (Tareas)</label>
+            <input type="number" id="campoNuevoArea" value="25.0" step="0.5" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Altitud (msnm)</label>
+            <input type="number" id="campoNuevoAltitud" value="1150" class="w-full border border-gray-300 rounded-xl p-2">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Variedad</label>
+            <input type="text" id="campoNuevoVariedad" value="Caturra" class="w-full border border-gray-300 rounded-xl p-2">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalCrearCampo()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarCrearCampo()" class="px-5 py-2 text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow">Guardar Campo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: INICIAR LOTE DE SECADO DIARIO ==================== -->
+  <div id="modalIniciarSecadoWeb" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-sun text-amber-600"></i> Iniciar Lote de Secado Diario
+        </h3>
+        <button onclick="cerrarModalIniciarSecadoWeb()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 my-4 text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Lote Base</label>
+            <select id="secadoLoteBaseSelect" class="w-full border border-gray-300 rounded-xl p-2 font-mono font-bold text-emerald-950">
+              <!-- Cargado dinámicamente -->
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Ubicación de Secado</label>
+            <select id="secadoUbicacionSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+              <option value="2">2. Almacén Secado Baní (Peravia)</option>
+              <option value="3">3. Almacén Secado La Peñita (Finca)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Cantidad de Bultos Recibidos</label>
+            <input type="number" id="secadoBultosInput" value="10" min="1" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Categoría</label>
+            <select id="secadoCategoriaSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+              <option value="PRIMERA">Primera</option>
+              <option value="SEGUNDA">Segunda</option>
+              <option value="BOLA">Café Bola</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Tipo de Café Puesto a Secar</label>
+            <select id="secadoTipoCafeSelect" class="w-full border border-gray-300 rounded-xl p-2 font-medium">
+              <option value="PERGAMINO_MOJADO">Pergamino Mojado</option>
+              <option value="CEREZA">Cereza Fresca / Natural</option>
+              <option value="LAVADO_PRIMERA">Lavado de Primera</option>
+              <option value="LAVADO_SEGUNDA">Lavado de Segunda</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Peso Inicial (kg)</label>
+            <input type="number" id="secadoPesoInicialInput" value="500.0" step="0.5" class="w-full border-2 border-emerald-700 rounded-xl p-2 font-black text-emerald-950">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Humedad Inicial (%)</label>
+            <input type="number" id="secadoHumedadInicialInput" value="50.0" step="0.5" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Clima</label>
+            <select id="secadoClimaSelect" class="w-full border border-gray-300 rounded-xl p-2 font-medium">
+              <option value="Soleado">Soleado</option>
+              <option value="Parcialmente Nublado">Parcialmente Nublado</option>
+              <option value="Nublado">Nublado</option>
+              <option value="Lluvia Ligera">Lluvia Ligera</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Temperatura (°C)</label>
+            <input type="number" id="secadoTempInput" value="28.0" step="0.5" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Observaciones</label>
+          <input type="text" id="secadoObsInput" placeholder="Observaciones de patio o clima" class="w-full border border-gray-300 rounded-xl p-2">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalIniciarSecadoWeb()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarIniciarSecadoWeb()" class="px-5 py-2 text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow">Poner a Secar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: REGISTRAR MEDICIÓN DE HUMEDAD DIARIA ==================== -->
+  <div id="modalMedirHumedad" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-droplet text-amber-600"></i> Medición de Humedad al Cierre del Día
+        </h3>
+        <button onclick="cerrarModalMedirHumedad()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 my-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Lote en Secado</label>
+          <select id="medicionSecadoLoteSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold text-emerald-950">
+            <!-- Dinámico -->
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Día Número</label>
+            <input type="number" id="medicionDiaNumero" value="1" min="1" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Humedad Cierre (%)</label>
+            <input type="number" id="medicionPorcentajeHumedad" value="12.0" step="0.1" class="w-full border-2 border-amber-600 rounded-xl p-2 font-black text-amber-950">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Clima</label>
+            <select id="medicionClimaSelect" class="w-full border border-gray-300 rounded-xl p-2">
+              <option value="Soleado">Soleado</option>
+              <option value="Parcialmente Nublado">Parcialmente Nublado</option>
+              <option value="Nublado">Nublado</option>
+              <option value="Lluvioso">Lluvioso</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Temperatura (°C)</label>
+            <input type="number" id="medicionTempC" value="27.0" step="0.5" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Observaciones</label>
+          <input type="text" id="medicionObservaciones" placeholder="Ej. Medición al cierre con higrómetro calibrado" class="w-full border border-gray-300 rounded-xl p-2">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalMedirHumedad()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarMedicionHumedad()" class="px-5 py-2 text-xs font-bold bg-amber-700 hover:bg-amber-800 text-white rounded-xl shadow">Guardar Medición</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: TRILLADO (PERGAMINO -> ORO) ==================== -->
+  <div id="modalTrillado" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-cubes-stacked text-emerald-800"></i> Registrar Trillado
+        </h3>
+        <button onclick="cerrarModalTrillado()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 my-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Lote Pergamino Seco</label>
+          <select id="trilladoLoteSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold text-emerald-950"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Bultos Recibidos</label>
+            <input type="number" id="trilladoBultosInput" value="5" min="1" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Kg Pergamino Recibidos</label>
+            <input type="number" id="trilladoKgPergaminoInput" value="250.0" step="0.5" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+        </div>
+        <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 space-y-2">
+          <span class="font-bold text-emerald-950 block text-[11px]">Café Verde Obtenido:</span>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block font-medium text-emerald-900 text-[10px]">Verde de Primera (kg)</label>
+              <input type="number" id="trilladoVerdePrimeraInput" value="190.0" step="0.5" class="w-full border border-emerald-300 rounded-lg p-1.5 font-bold text-emerald-900">
+            </div>
+            <div>
+              <label class="block font-medium text-emerald-900 text-[10px]">Verde de Segunda (kg)</label>
+              <input type="number" id="trilladoVerdeSegundaInput" value="15.0" step="0.5" class="w-full border border-emerald-300 rounded-lg p-1.5 font-bold text-amber-900">
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Cascarilla / Cispo (kg)</label>
+            <input type="number" id="trilladoCascarillaInput" value="40.0" step="0.5" class="w-full border border-gray-300 rounded-xl p-2 font-medium">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Descarte / Pasilla (kg)</label>
+            <input type="number" id="trilladoDescarteInput" value="5.0" step="0.5" class="w-full border border-gray-300 rounded-xl p-2 font-medium">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalTrillado()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarTrillado()" class="px-5 py-2 text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow">Ejecutar Trillado</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: TOSTADURÍA ==================== -->
+  <div id="modalTostado" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-fire-burner text-amber-700"></i> Registrar Batch de Tueste
+        </h3>
+        <button onclick="cerrarModalTostado()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 my-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Lote Verde Oro</label>
+          <select id="tostadoLoteSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold text-gray-900"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Categoría a Tostar</label>
+            <select id="tostadoCategoriaSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+              <option value="PRIMERA">Primera</option>
+              <option value="SEGUNDA">Segunda</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Grado de Tueste</label>
+            <select id="tostadoGradoSelect" class="w-full border border-gray-300 rounded-xl p-2 font-medium">
+              <option value="Medio">Medio (Morning Blend)</option>
+              <option value="Claro">Claro</option>
+              <option value="Oscuro">Oscuro (El Vecino)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Kg Verde que Pasan a Tueste</label>
+            <input type="number" id="tostadoKgVerdeInput" value="50.0" step="0.5" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-amber-900 mb-1">Kg Tostado Obtenido</label>
+            <input type="number" id="tostadoKgTostadoInput" value="42.0" step="0.5" class="w-full border-2 border-amber-600 rounded-xl p-2 font-black text-amber-950">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalTostado()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarTostado()" class="px-5 py-2 text-xs font-bold bg-amber-800 hover:bg-amber-900 text-white rounded-xl shadow">Ejecutar Tueste</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: EMPAQUE POR SKU OFICIAL ==================== -->
+  <div id="modalEmpaque" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-box-open text-blue-700"></i> Empaque por SKU Oficial
+        </h3>
+        <button onclick="cerrarModalEmpaque()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 my-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Lote Tostado Origen</label>
+          <select id="empaqueLoteTostadoSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold"></select>
+        </div>
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Producto SKU Oficial (Anexo B)</label>
+          <select id="empaqueSkuSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold text-emerald-950"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Formato</label>
+            <select id="empaqueFormatoSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+              <option value="MOLIDO">Café Molido</option>
+              <option value="GRANO">Café en Granos</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-blue-900 mb-1">Paquetes Obtenidos</label>
+            <input type="number" id="empaqueUnidadesInput" value="50" min="1" class="w-full border-2 border-blue-600 rounded-xl p-2 font-black text-blue-950">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalEmpaque()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarEmpaque()" class="px-5 py-2 text-xs font-bold bg-blue-800 hover:bg-blue-900 text-white rounded-xl shadow">Registrar Empaque</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: DESPACHO PRODUCTO FINAL ==================== -->
+  <div id="modalDespachoFinal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-truck-fast text-purple-700"></i> Despacho de Producto Final
+        </h3>
+        <button onclick="cerrarModalDespachoFinal()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 my-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Producto SKU</label>
+          <select id="despachoSkuSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold text-emerald-950"></select>
+        </div>
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Cliente / Destino</label>
+          <input type="text" id="despachoClienteInput" placeholder="Ej: Supermercados Nacional / Cafetería Zona Colonial" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-purple-900 mb-1">Paquetes Despachados</label>
+            <input type="number" id="despachoPaquetesInput" value="25" min="1" class="w-full border-2 border-purple-600 rounded-xl p-2 font-black text-purple-950">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">N° Conduce / Factura</label>
+            <input type="text" id="despachoDocInput" value="DESP-2026-001" class="w-full border border-gray-300 rounded-xl p-2 font-mono">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Chofer</label>
+            <input type="text" id="despachoChoferInput" value="Marcos Soto" class="w-full border border-gray-300 rounded-xl p-2">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Placa Vehículo</label>
+            <input type="text" id="despachoPlacaInput" value="L-354921" class="w-full border border-gray-300 rounded-xl p-2 font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Observaciones</label>
+          <input type="text" id="despachoObsInput" placeholder="Despacho entregado conforme" class="w-full border border-gray-300 rounded-xl p-2">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalDespachoFinal()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarDespachoFinal()" class="px-5 py-2 text-xs font-bold bg-purple-800 hover:bg-purple-900 text-white rounded-xl shadow">Confirmar Despacho</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: REGISTRAR TRASLADO EN 6 RUTAS OPERATIVAS ==================== -->
+  <div id="modalRegistrarRuta" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-sicaf">
+      <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+        <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+          <i class="fa-solid fa-route text-emerald-800"></i> Registrar Traslado (6 Rutas Operativas)
+        </h3>
+        <button onclick="cerrarModalRegistrarRuta()" class="text-gray-400 text-xl font-bold">&times;</button>
+      </div>
+      <div class="space-y-3 my-4 text-xs">
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Ruta Operativa</label>
+          <select id="rutaTipoSelect" onchange="actualizarFormularioRuta()" class="w-full border-2 border-emerald-700 rounded-xl p-2 font-bold text-emerald-950">
+            <option value="CAMPO_A_BENEFICIO">1. Campo ➔ Beneficio</option>
+            <option value="BENEFICIO_A_SECADO">2. Beneficio ➔ Área de Secado (Baní)</option>
+            <option value="SECADO_A_ALMACEN_FINCA">3. Área de Secado ➔ Almacén de la Finca</option>
+            <option value="FINCA_A_TOSTADURIA">4. Finca ➔ Tostaduría</option>
+            <option value="TOSTADURIA_A_SANTO_DOMINGO">5. Tostaduría ➔ Almacén de Distribución en Santo Domingo</option>
+            <option value="FINCA_A_CLIENTES">6. Finca ➔ Clientes Directos</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Lote / Código de Carga</label>
+            <input type="text" id="rutaCodigoLoteInput" placeholder="Ej: LOTE-2026-FENELON-01" class="w-full border border-gray-300 rounded-xl p-2 font-mono font-bold uppercase">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Tipo de Café</label>
+            <select id="rutaTipoCafeSelect" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+              <option value="CEREZA">Cereza Fresca</option>
+              <option value="PERGAMINO_MOJADO">Pergamino Mojado</option>
+              <option value="PERGAMINO_SECO">Pergamino Seco (10-12.5%)</option>
+              <option value="ORO">Café Verde / Oro</option>
+              <option value="TOSTADO">Café Tostado</option>
+              <option value="EMPACADO">Producto Empacado Final</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Cantidad de Bultos</label>
+            <input type="number" id="rutaBultosInput" value="10" min="1" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+          </div>
+          <div>
+            <label class="block font-bold text-emerald-900 mb-1">Cantidad de Kilos</label>
+            <input type="number" id="rutaKilosInput" value="450.0" step="0.5" class="w-full border-2 border-emerald-700 rounded-xl p-2 font-black text-emerald-950">
+          </div>
+        </div>
+        <div id="rutaClienteDiv" class="hidden">
+          <label class="block font-bold text-gray-700 mb-1">Nombre del Cliente Destino</label>
+          <input type="text" id="rutaClienteInput" placeholder="Nombre de la empresa o cliente" class="w-full border border-gray-300 rounded-xl p-2 font-bold">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Chofer</label>
+            <input type="text" id="rutaChoferInput" value="Carlos Méndez" class="w-full border border-gray-300 rounded-xl p-2 font-medium">
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Vehículo / Placa</label>
+            <input type="text" id="rutaPlacaInput" value="L-294012" class="w-full border border-gray-300 rounded-xl p-2 font-mono">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Observaciones</label>
+          <input type="text" id="rutaObsInput" placeholder="Carga revisada y asegurada" class="w-full border border-gray-300 rounded-xl p-2">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-gray-200">
+        <button onclick="cerrarModalRegistrarRuta()" class="px-4 py-2 text-xs font-bold text-gray-600">Cancelar</button>
+        <button onclick="guardarRegistrarRuta()" class="px-5 py-2 text-xs font-bold bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl shadow">Registrar Traslado</button>
+      </div>
+    </div>
+  </div>
+
   <!-- SCRIPT CLIENTE COMPLETO -->
   <script>
     let rawCampos = [];
@@ -1154,6 +2182,8 @@
       cargarSacosInventario();
       cargarAuditoria();
       cargarProductosSKU();
+      cargarProcesosTransformacion();
+      cargarHistorialRutas();
       consultarTrazabilidad();
     });
 
@@ -1358,10 +2388,21 @@
 
       // Poblar dropdown en filtro de dashboard
       const sc = document.getElementById("filterCampo");
-      sc.innerHTML = '<option value="">Todos los Campos (25)</option>';
-      rawCampos.forEach(c => {
-        sc.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre}</option>`;
-      });
+      if (sc) {
+        sc.innerHTML = '<option value="">Todos los Campos (25)</option>';
+        rawCampos.forEach(c => {
+          sc.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} (${(c.cantidad_plantas || 0).toLocaleString()} plantas)</option>`;
+        });
+      }
+
+      // Poblar dropdown de campos en beneficio
+      const bfSel = document.getElementById("bfCampoSelect");
+      if (bfSel) {
+        bfSel.innerHTML = "";
+        rawCampos.forEach(c => {
+          bfSel.innerHTML += `<option value="${c.id}">${c.codigo} - ${c.nombre} [${c.variedad}] (${(c.cantidad_plantas || 0).toLocaleString()} plantas)</option>`;
+        });
+      }
 
       filtrarYOrdenarCampos();
     }
@@ -1385,6 +2426,7 @@
         if (criterio === "codigo_asc") return a.codigo.localeCompare(b.codigo);
         if (criterio === "nombre_asc") return a.nombre.localeCompare(b.nombre);
         if (criterio === "area_desc") return b.area_tareas - a.area_tareas;
+        if (criterio === "plantas_desc") return (b.cantidad_plantas || 0) - (a.cantidad_plantas || 0);
         if (criterio === "area_asc") return a.area_tareas - b.area_tareas;
         if (criterio === "cosecha_desc") return b.total_cosecha_kg - a.total_cosecha_kg;
         if (criterio === "rendimiento_desc") return b.kg_tarea - a.kg_tarea;
@@ -1395,7 +2437,7 @@
       const tbody = document.getElementById("tablaCampos");
       tbody.innerHTML = "";
       if (filtrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-gray-500">No se encontraron campos con los filtros seleccionados.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center py-4 text-gray-500">No se encontraron campos con los filtros seleccionados.</td></tr>';
         return;
       }
 
@@ -1407,6 +2449,7 @@
               ${c.nombre} <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-gray-400"></i>
             </td>
             <td class="py-2.5 px-3 text-gray-600">${c.sector || 'General'}</td>
+            <td class="py-2.5 px-3 text-right font-bold text-emerald-800">${(c.cantidad_plantas || 0).toLocaleString()}</td>
             <td class="py-2.5 px-3 text-right font-semibold">${c.area_tareas}</td>
             <td class="py-2.5 px-3 text-right text-gray-500">${c.altitud_msnm} m</td>
             <td class="py-2.5 px-3 text-gray-700">${c.variedad}</td>
@@ -1432,6 +2475,7 @@
       const criterioSelect = document.getElementById("ordenarCamposCriterio");
       if (col === 'codigo') criterioSelect.value = "codigo_asc";
       if (col === 'nombre') criterioSelect.value = "nombre_asc";
+      if (col === 'cantidad_plantas') criterioSelect.value = "plantas_desc";
       if (col === 'area_tareas') criterioSelect.value = ordenAscendente ? "area_asc" : "area_desc";
       if (col === 'total_cosecha_kg') criterioSelect.value = "cosecha_desc";
       if (col === 'kg_tarea') criterioSelect.value = "rendimiento_desc";
@@ -1494,9 +2538,18 @@
     // ==================== MÓDULO NÓMINA: ADMINISTRACIÓN DE TARIFAS Y AJUSTES (GOAL 3) ====================
     async function cargarNomina() {
       try {
+        const fechaDesde = document.getElementById("nominaFechaDesde") ? document.getElementById("nominaFechaDesde").value : "";
+        const fechaHasta = document.getElementById("nominaFechaHasta") ? document.getElementById("nominaFechaHasta").value : "";
+        
+        let urlNomina = "/api/nomina/liquidacion";
+        const params = [];
+        if (fechaDesde) params.push(`fecha_desde=${fechaDesde}`);
+        if (fechaHasta) params.push(`fecha_hasta=${fechaHasta}`);
+        if (params.length > 0) urlNomina += "?" + params.join("&");
+
         const [resTarifas, resNomina, resTrab] = await Promise.all([
           fetch("/api/tarifas"),
-          fetch("/api/nomina/liquidacion"),
+          fetch(urlNomina),
           fetch("/api/trabajadores")
         ]);
 
@@ -1512,23 +2565,26 @@
 
         // Poblar select de recolectores para adelantos
         const selAjuste = document.getElementById("ajusteRecolectorSelect");
-        selAjuste.innerHTML = "";
-        trabajadores.forEach(t => {
-          selAjuste.innerHTML += `<option value="${t.id}">${t.nombre_completo} (${t.cuadrilla})</option>`;
-        });
+        if (selAjuste) {
+          selAjuste.innerHTML = "";
+          trabajadores.forEach(t => {
+            selAjuste.innerHTML += `<option value="${t.id}">${t.nombre_completo}</option>`;
+          });
+        }
 
-        // Tabla de liquidación
+        // Tabla de liquidación (Sin cuadrilla, con tarifa día transparente)
         const tbody = document.getElementById("tablaNominaCompleta");
         tbody.innerHTML = "";
         data.detalle.forEach(d => {
+          const tarifaDia = d.tarifa_dia !== undefined ? d.tarifa_dia : 800.0;
           tbody.innerHTML += `
             <tr class="hover:bg-gray-50">
               <td class="py-2.5 px-3 font-bold text-gray-900">${d.nombre}</td>
-              <td class="py-2.5 px-3 text-gray-600">${d.cuadrilla}</td>
               <td class="py-2.5 px-3 text-right font-black text-gray-800">${d.kg_cosechados} kg</td>
               <td class="py-2.5 px-3 text-right text-gray-600 font-mono">RD$ ${d.tarifa_kg.toFixed(2)}</td>
               <td class="py-2.5 px-3 text-right font-semibold">RD$ ${d.subtotal_kg.toFixed(2)}</td>
               <td class="py-2.5 px-3 text-right text-gray-800">${d.dias_jornada} días</td>
+              <td class="py-2.5 px-3 text-right text-emerald-800 font-mono font-bold">RD$ ${tarifaDia.toFixed(2)}</td>
               <td class="py-2.5 px-3 text-right font-semibold">RD$ ${d.subtotal_jornada.toFixed(2)}</td>
               <td class="py-2.5 px-3 text-right font-bold text-gray-900">RD$ ${d.bruto.toFixed(2)}</td>
               <td class="py-2.5 px-3 text-right text-red-700 font-bold">RD$ ${d.adelantos.toFixed(2)}</td>
@@ -1680,20 +2736,29 @@
       cargarNomina();
     }
 
-    // ==================== RECEPCIÓN, SECADO, INVENTARIO Y TRAZABILIDAD ====================
+    // ==================== RECEPCIÓN, BENEFICIO Y ORIGEN ====================
+    function toggleOrigenBeneficio() {
+      const esFinca = document.getElementById("bfOrigenFinca").checked;
+      document.getElementById("bfCampoDiv").classList.toggle("hidden", !esFinca);
+      document.getElementById("bfExternoDiv").classList.toggle("hidden", esFinca);
+    }
+
     async function cargarRecepciones() {
       const res = await fetch("/api/recepcion");
       const data = await res.json();
       const tbody = document.getElementById("tablaRecepciones");
       tbody.innerHTML = "";
       data.forEach(r => {
+        const origen = r.campo_nombre ? `Finca: ${r.campo_nombre}` : (r.productor_externo ? `Ext: ${r.productor_externo}` : "Finca La Peñita");
         tbody.innerHTML += `
           <tr class="hover:bg-gray-50">
             <td class="py-2.5 px-3 font-mono font-bold text-emerald-950">${r.lote_codigo}</td>
             <td class="py-2.5 px-3 font-mono">${r.fecha}</td>
-            <td class="py-2.5 px-3 text-right font-medium">${r.kg_campo_total} kg</td>
-            <td class="py-2.5 px-3 text-right font-bold text-emerald-900">${r.kg_validados} kg</td>
-            <td class="py-2.5 px-3 text-right ${r.diferencia_kg > 0 ? 'text-amber-700 font-bold' : 'text-gray-500'}">${r.diferencia_kg} kg</td>
+            <td class="py-2.5 px-3 font-semibold text-gray-800">${origen}</td>
+            <td class="py-2.5 px-3 text-center font-bold text-gray-700">${r.cantidad_bultos || 1} bultos</td>
+            <td class="py-2.5 px-3 text-right font-black text-emerald-900">${r.kg_validados} kg</td>
+            <td class="py-2.5 px-3 text-right font-bold text-emerald-700">${r.kg_lavado_primera !== undefined ? r.kg_lavado_primera + ' kg' : '-'}</td>
+            <td class="py-2.5 px-3 text-right font-bold text-amber-800">${r.kg_lavado_segunda !== undefined ? r.kg_lavado_segunda + ' kg' : '-'}</td>
             <td class="py-2.5 px-3 text-center font-bold ${r.alerta_calidad ? 'text-red-700 bg-red-50' : 'text-emerald-800'}">
               ${r.pct_fruta_inmadura}%
             </td>
@@ -1707,19 +2772,35 @@
 
     async function ejecutarValidacionBeneficio(e) {
       e.preventDefault();
+      const esFinca = document.getElementById("bfOrigenFinca").checked;
+      const campoId = esFinca ? parseInt(document.getElementById("bfCampoSelect").value) : null;
+      const bultos = parseInt(document.getElementById("bfCantidadBultos").value) || 1;
+      const kgVal = parseFloat(document.getElementById("bfKgValidados").value);
+      const kgLavP1 = parseFloat(document.getElementById("bfKgLavadoPrimera").value) || 0;
+      const kgLavS2 = parseFloat(document.getElementById("bfKgLavadoSegunda").value) || 0;
+      const pctInm = parseFloat(document.getElementById("bfPctInmadura").value);
+      const obs = document.getElementById("bfObs").value;
+
       const body = {
         fecha: document.getElementById("bfFecha").value,
-        kg_validados: parseFloat(document.getElementById("bfKgValidados").value),
-        pct_fruta_inmadura: parseFloat(document.getElementById("bfPctInmadura").value),
-        observaciones: document.getElementById("bfObs").value
+        kg_validados: kgVal,
+        pct_fruta_inmadura: pctInm,
+        tipo_proveedor: esFinca ? "MYRA_CAFE" : "PRODUCTOR_EXTERNO",
+        campo_id: campoId,
+        cantidad_bultos: bultos,
+        kg_lavado_primera: kgLavP1,
+        kg_lavado_segunda: kgLavS2,
+        observaciones: obs,
+        validado_por: "Encargado de Beneficio"
       };
+
       const res = await fetch("/api/recepcion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
       const data = await res.json();
-      alert(`Recepción completada.\nLote creado: ${data.lote_codigo}\n${data.alerta_mensaje}`);
+      alert(`Recepción completada en Beneficio.\nLote: ${data.lote_codigo}\nBultos: ${bultos}\nLavado 1ra: ${kgLavP1} kg | 2da: ${kgLavS2} kg\n${data.alerta_mensaje}`);
       cargarRecepciones();
       cargarDashboardIntegral();
       cargarInventario();
@@ -1731,13 +2812,17 @@
       const tbody = document.getElementById("tablaSecados");
       tbody.innerHTML = "";
       data.forEach(s => {
+        const climaInfo = s.clima ? `${s.clima} (${s.temperatura_c || 26}°C)` : "Soleado (26°C)";
         tbody.innerHTML += `
           <tr class="hover:bg-gray-50">
             <td class="py-2.5 px-3 font-mono font-bold text-gray-900">${s.lote_codigo}</td>
             <td class="py-2.5 px-3 font-medium text-gray-700">${s.almacen}</td>
+            <td class="py-2.5 px-3 text-center font-bold text-gray-800">${s.cantidad_bultos || 1} bultos</td>
+            <td class="py-2.5 px-3 text-gray-700"><span class="bg-gray-100 text-gray-800 text-[10px] font-bold px-2 py-0.5 rounded">${s.categoria_cafe || 'PRIMERA'} - ${s.tipo_cafe_secando || 'PERGAMINO'}</span></td>
             <td class="py-2.5 px-3 font-mono">${s.fecha_inicio}</td>
-            <td class="py-2.5 px-3 text-right font-semibold">${s.peso_inicial_kg} kg</td>
+            <td class="py-2.5 px-3 text-right font-black text-emerald-950">${s.peso_inicial_kg} kg</td>
             <td class="py-2.5 px-3 text-center font-bold text-amber-900">${s.humedad_actual}%</td>
+            <td class="py-2.5 px-3 text-gray-600 text-[11px]">${climaInfo}</td>
             <td class="py-2.5 px-3 text-center font-medium">${s.dias_secado} días</td>
             <td class="py-2.5 px-3 text-center">
               <span class="text-[10px] ${s.estado === 'FINALIZADO' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'} font-bold px-2 py-0.5 rounded-full">
@@ -1752,6 +2837,122 @@
           </tr>
         `;
       });
+    }
+
+    // Modal Iniciar Secado Diario
+    async function abrirModalIniciarSecadoWeb() {
+      try {
+        const res = await fetch("/api/inventario");
+        const lotes = await res.json();
+        const sel = document.getElementById("secadoLoteBaseSelect");
+        sel.innerHTML = "";
+        lotes.forEach(l => {
+          sel.innerHTML += `<option value="${l.id}">${l.lote} (${l.almacen}) - ${l.kg_disponibles} kg</option>`;
+        });
+        document.getElementById("modalIniciarSecadoWeb").classList.remove("hidden");
+      } catch (err) {
+        alert("Error cargando lotes para secado: " + err.message);
+      }
+    }
+
+    function cerrarModalIniciarSecadoWeb() {
+      document.getElementById("modalIniciarSecadoWeb").classList.add("hidden");
+    }
+
+    async function guardarIniciarSecadoWeb() {
+      const loteId = parseInt(document.getElementById("secadoLoteBaseSelect").value);
+      const almId = parseInt(document.getElementById("secadoUbicacionSelect").value);
+      const bultos = parseInt(document.getElementById("secadoBultosInput").value) || 1;
+      const cat = document.getElementById("secadoCategoriaSelect").value;
+      const tipoCafe = document.getElementById("secadoTipoCafeSelect").value;
+      const pesoIni = parseFloat(document.getElementById("secadoPesoInicialInput").value);
+      const humIni = parseFloat(document.getElementById("secadoHumedadInicialInput").value);
+      const clima = document.getElementById("secadoClimaSelect").value;
+      const tempC = parseFloat(document.getElementById("secadoTempInput").value);
+      const obs = document.getElementById("secadoObsInput").value;
+
+      const res = await fetch("/api/secado/iniciar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lote_id: loteId,
+          almacen_id: almId,
+          fecha_inicio: new Date().toISOString().substring(0, 10),
+          peso_inicial_kg: pesoIni,
+          cantidad_bultos: bultos,
+          categoria_cafe: cat,
+          tipo_cafe_secando: tipoCafe,
+          humedad_inicial: humIni,
+          clima: clima,
+          temperatura_c: tempC,
+          observaciones: obs,
+          responsable: "Encargado de Secado"
+        })
+      });
+      const data = await res.json();
+      alert(`Secado iniciado exitosamente.\nLote: ${data.lote_codigo}\nBultos: ${bultos}\nTipo: ${tipoCafe} (${cat})\nClima: ${clima} (${tempC}°C)`);
+      cerrarModalIniciarSecadoWeb();
+      cargarSecados();
+      cargarInventario();
+    }
+
+    // Modal Medición Humedad al Cierre del Día
+    async function abrirModalMedirHumedad() {
+      try {
+        const res = await fetch("/api/secado");
+        const secados = await res.json();
+        const activos = secados.filter(s => s.estado === "EN_PROCESO");
+        const sel = document.getElementById("medicionSecadoLoteSelect");
+        sel.innerHTML = "";
+        if (activos.length === 0) {
+          sel.innerHTML = '<option value="">No hay lotes en secado activo</option>';
+        } else {
+          activos.forEach(s => {
+            sel.innerHTML += `<option value="${s.id}">${s.lote_codigo} (${s.almacen}) - Día ${s.dias_secado}</option>`;
+          });
+        }
+        document.getElementById("modalMedirHumedad").classList.remove("hidden");
+      } catch (err) {
+        alert("Error cargando secados: " + err.message);
+      }
+    }
+
+    function cerrarModalMedirHumedad() {
+      document.getElementById("modalMedirHumedad").classList.add("hidden");
+    }
+
+    async function guardarMedicionHumedad() {
+      const secId = parseInt(document.getElementById("medicionSecadoLoteSelect").value);
+      const diaNum = parseInt(document.getElementById("medicionDiaNumero").value);
+      const humPct = parseFloat(document.getElementById("medicionPorcentajeHumedad").value);
+      const clima = document.getElementById("medicionClimaSelect").value;
+      const tempC = parseFloat(document.getElementById("medicionTempC").value);
+      const obs = document.getElementById("medicionObservaciones").value;
+
+      if (!secId || isNaN(humPct)) {
+        alert("Por favor complete los datos obligatorios.");
+        return;
+      }
+
+      const res = await fetch("/api/secado/medicion-humedad", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secado_id: secId,
+          porcentaje_humedad: humPct,
+          dia_numero: diaNum,
+          humedad_cierre_dia: true,
+          temperatura_c: tempC,
+          clima: clima,
+          observaciones: obs,
+          responsable: "Encargado de Secado",
+          instrumento: "Higrómetro Calibrado"
+        })
+      });
+      const data = await res.json();
+      alert(`Medición registrada.\nDía: ${diaNum}\nHumedad cierre: ${humPct}%\nClima: ${clima} (${tempC}°C)\n${data.alerta_mensaje}`);
+      cerrarModalMedirHumedad();
+      cargarSecados();
     }
 
     async function finalizarSecadoLote(secadoId, pesoInicial) {
@@ -1853,26 +3054,29 @@
       });
     }
 
-    function cargarProductosSKU() {
+    async function cargarProductosSKU() {
       const g = document.getElementById("gridProductosSKU");
-      const skus = [
-        { marca: "Café El Vecino", pres: "7 oz (198.4 g)", format: "Grano y Molido", sku: "EV-7OZ" },
-        { marca: "Café El Vecino", pres: "250 g", format: "Grano y Molido", sku: "EV-250G" },
-        { marca: "Café El Vecino", pres: "400 g", format: "Grano y Molido", sku: "EV-400G" },
-        { marca: "Insurrecto Morning Blend", pres: "12 oz (340.2 g)", format: "Grano y Molido (100% Puro)", sku: "MB-12OZ" },
-        { marca: "Insurrecto Morning Blend", pres: "2.5 lb (1,134 g)", format: "Grano y Molido (100% Puro)", sku: "MB-25LB" },
-      ];
-      g.innerHTML = "";
-      skus.forEach(s => {
-        g.innerHTML += `
-          <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200">
-            <span class="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">${s.sku}</span>
-            <h4 class="text-sm font-bold text-gray-900 mt-2">${s.marca}</h4>
-            <p class="text-xs text-gray-600 font-semibold">${s.pres}</p>
-            <p class="text-[11px] text-gray-500 mt-1">${s.format}</p>
-          </div>
-        `;
-      });
+      try {
+        const res = await fetch("/api/skus");
+        const skus = await res.json();
+        g.innerHTML = "";
+        skus.forEach(s => {
+          g.innerHTML += `
+            <div class="p-4 bg-gray-50 rounded-2xl border border-gray-200 hover:shadow-md transition">
+              <span class="text-[10px] font-mono font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full">${s.sku}</span>
+              <h4 class="text-sm font-black text-gray-900 mt-2">${s.nombre}</h4>
+              <p class="text-xs text-gray-700 font-semibold mt-1">Peso Neto: ${(s.peso_neto_kg * 1000).toFixed(1)} g (${s.peso_neto_kg.toFixed(4)} kg)</p>
+              <p class="text-[11px] text-gray-500 mt-0.5">Formato: ${s.formato || 'Molido / Granos'}</p>
+              <div class="mt-3 pt-2 border-t border-gray-200 flex justify-between items-center text-[10px]">
+                <span class="text-emerald-800 font-bold"><i class="fa-solid fa-leaf"></i> 100% Puro de Origen</span>
+                <span class="text-gray-400">Anexo B Oficial</span>
+              </div>
+            </div>
+          `;
+        });
+      } catch (err) {
+        console.error("Error cargando SKUs:", err);
+      }
     }
 
     async function sincronizarSheets() {

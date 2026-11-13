@@ -574,5 +574,284 @@ def test_pa30_secado_registro_kg_movil():
     finally:
         db.close()
 
+# ----------------- PA-31 Campos con Cantidad de Plantas -----------------
+def test_pa31_campos_plantas():
+    from backend.database import SessionLocal
+    from backend.models import Campo
+    from backend.main import crear_campo, CampoCreateInput
+    import uuid
+
+    db = SessionLocal()
+    try:
+        cod = f"CP-TEST-{uuid.uuid4().hex[:4].upper()}"
+        res = crear_campo(CampoCreateInput(
+            codigo=cod,
+            nombre="Lote Las Palmas",
+            sector="Sector Norte",
+            area_tareas=25.0,
+            cantidad_plantas=12500,
+            variedad="Caturra Rojo"
+        ), db)
+        assert res["status"] == "SUCCESS"
+        assert res["campo"]["cantidad_plantas"] == 12500
+
+        c_db = db.query(Campo).filter(Campo.codigo == cod).first()
+        assert c_db is not None
+        assert c_db.cantidad_plantas == 12500
+    finally:
+        db.close()
+
+# ----------------- PA-32 Beneficio: Bultos, Origen Finca/Externo y Lavado Primera/Segunda -----------------
+def test_pa32_beneficio_bultos_lavado_origen():
+    from backend.database import SessionLocal
+    from backend.models import RecepcionBeneficio
+    from backend.main import validar_recepcion_beneficio, RecepcionBeneficioInput
+
+    db = SessionLocal()
+    try:
+        # Recepción de la finca propia (La Peñita - Campo 1)
+        res_finca = validar_recepcion_beneficio(RecepcionBeneficioInput(
+            fecha="2026-11-09",
+            kg_validados=1200.0,
+            pct_fruta_inmadura=3.5,
+            tipo_proveedor="MYRA_CAFE",
+            campo_id=1,
+            cantidad_bultos=24,
+            kg_lavado_primera=850.0,
+            kg_lavado_segunda=200.0,
+            observaciones="Cosecha selectiva Finca La Peñita"
+        ), db)
+        assert res_finca["status"] == "VALIDADO"
+        
+        rec_db = db.query(RecepcionBeneficio).filter(RecepcionBeneficio.id == res_finca["recepcion_id"]).first()
+        assert rec_db.cantidad_bultos == 24
+        assert rec_db.campo_id == 1
+        assert rec_db.kg_lavado_primera == 850.0
+        assert rec_db.kg_lavado_segunda == 200.0
+    finally:
+        db.close()
+
+# ----------------- PA-33 Secado: Bultos, Tipo Café, Humedad Diaria, Clima y Temperatura -----------------
+def test_pa33_secado_diario_clima():
+    from backend.database import SessionLocal
+    from backend.models import Lote, SecadoLote, MedicionHumedad
+    from backend.main import (
+        iniciar_secado, SecadoIniciarInput,
+        registrar_humedad_secado, SecadoHumedadInput
+    )
+    import uuid
+
+    db = SessionLocal()
+    try:
+        lote = Lote(
+            codigo=f"SEC-CLI-{uuid.uuid4().hex[:5].upper()}",
+            empresa_propietaria="Insurrecto Coffee",
+            clasificacion="PRIMERA",
+            estado_cafe="PERGAMINO_MOJADO",
+            almacen_actual_id=1,
+            kg_disponibles=600.0
+        )
+        db.add(lote)
+        db.commit()
+        db.refresh(lote)
+
+        # Iniciar secado con bultos, tipo de café, clima y temperatura
+        res_ini = iniciar_secado(SecadoIniciarInput(
+            lote_id=lote.id,
+            almacen_id=2, # Baní
+            fecha_inicio="2026-11-09",
+            peso_inicial_kg=600.0,
+            cantidad_bultos=12,
+            categoria_cafe="PRIMERA",
+            tipo_cafe_secando="PERGAMINO_LAVADO",
+            humedad_inicial=50.0,
+            clima="Soleado con brisa moderada",
+            temperatura_c=28.5,
+            responsable="Encargado Baní"
+        ), db)
+        sec_id = res_ini["secado_id"]
+
+        sec_db = db.query(SecadoLote).filter(SecadoLote.id == sec_id).first()
+        assert sec_db.cantidad_bultos == 12
+        assert sec_db.tipo_cafe_secando == "PERGAMINO_LAVADO"
+        assert sec_db.temperatura_c == 28.5
+
+        # Registro de humedad al cierre del día 1
+        res_med = registrar_humedad_secado(SecadoHumedadInput(
+            secado_id=sec_id,
+            dia_numero=1,
+            porcentaje_humedad=36.0,
+            humedad_cierre_dia=True,
+            temperatura_c=29.0,
+            clima="Soleado y despejado",
+            observaciones="Cierre de jornada día 1 sin incidencias",
+            responsable="Encargado Baní"
+        ), db)
+        assert res_med["status"] == "MEDICION_REGISTRADA"
+
+        med = db.query(MedicionHumedad).filter(MedicionHumedad.secado_id == sec_id, MedicionHumedad.dia_numero == 1).first()
+        assert med.dia_numero == 1
+        assert med.humedad_cierre_dia is True
+        assert med.temperatura_c == 29.0
+    finally:
+        db.close()
+
+# ----------------- PA-34 Trillado, Tostado, SKUs Oficiales y Despacho Final -----------------
+def test_pa34_trillado_tostado_despacho():
+    from backend.database import SessionLocal
+    from backend.models import Lote, ProductoSKU, ProcesoTransformacion
+    from backend.main import (
+        proceso_trillado, TrilladoInput,
+        proceso_tostado, TostadoInput,
+        proceso_empaque, EmpaqueInput,
+        despacho_producto_final, DespachoProductoFinalInput,
+        list_skus
+    )
+    import uuid
+
+    db = SessionLocal()
+    try:
+        # Verificar que los 6 SKUs oficiales existan
+        skus = list_skus(db)
+        assert len(skus) >= 6
+        sku_molido_12oz = next(s for s in skus if s["sku"] == "ILP-MB-12OZ-MOL")
+        assert sku_molido_12oz["peso_neto_kg"] == 0.3402
+
+        # 1. Trillado: recibe bultos y kilos, produce verde Primera y Segunda
+        lote_p = Lote(
+            codigo=f"TRILL-{uuid.uuid4().hex[:5].upper()}",
+            empresa_propietaria="Insurrecto Coffee",
+            clasificacion="PRIMERA",
+            estado_cafe="PERGAMINO_SECO",
+            almacen_actual_id=4,
+            kg_disponibles=250.0
+        )
+        db.add(lote_p)
+        db.commit()
+        db.refresh(lote_p)
+
+        res_trill = proceso_trillado(TrilladoInput(
+            lote_pergamino_id=lote_p.id,
+            cantidad_bultos_recibidos=5,
+            kg_pergamino=250.0,
+            kg_oro_primera=190.0,
+            kg_oro_segunda=10.0,
+            kg_cascarilla=45.0,
+            kg_descarte=2.0,
+            responsable="Tostaduría Insurrecto"
+        ), db)
+        assert res_trill["status"] == "TRILLADO_COMPLETADO"
+        assert res_trill["lote_oro_segunda"] is not None
+
+        # 2. Tostado de verde Primera
+        lote_oro = db.query(Lote).filter(Lote.codigo == res_trill["lote_oro_primera"]).first()
+        res_tost = proceso_tostado(TostadoInput(
+            lote_oro_id=lote_oro.id,
+            categoria="PRIMERA",
+            kg_oro=50.0,
+            kg_tostado=42.0,
+            grado_tueste="Medio Especial",
+            responsable="Tostador Maestro"
+        ), db)
+        assert res_tost["status"] == "TOSTADO_COMPLETADO"
+        assert res_tost["categoria"] == "PRIMERA"
+
+        # 3. Empaque en SKU Morning Blend 12 oz
+        lote_tost = db.query(Lote).filter(Lote.codigo == res_tost["lote_tostado_creado"]).first()
+        res_emp = proceso_empaque(EmpaqueInput(
+            lote_tostado_id=lote_tost.id,
+            sku_id=sku_molido_12oz["id"],
+            unidades=100,
+            formato="MOLIDO",
+            responsable="Operador Empaque"
+        ), db)
+        assert res_emp["status"] == "EMPAQUE_COMPLETADO"
+        assert res_emp["unidades_producidas"] == 100
+
+        # 4. Despacho Final de producto terminado
+        res_desp = despacho_producto_final(DespachoProductoFinalInput(
+            sku_id=sku_molido_12oz["id"],
+            cliente_destino="Supermercado Nacional",
+            paquetes_despachados=50,
+            documento_despacho="FAC-2026-9901",
+            chofer="Manuel Gómez",
+            vehiculo_placa="L-334455",
+            responsable="Encargado Logística"
+        ), db)
+        assert res_desp["status"] == "DESPACHADO"
+        assert res_desp["paquetes_despachados"] == 50
+    finally:
+        db.close()
+
+# ----------------- PA-35 Las 6 Rutas Oficiales de Traslado -----------------
+def test_pa35_traslados_6_rutas():
+    from backend.database import SessionLocal
+    from backend.models import Traslado
+    from backend.main import registrar_traslado_ruta, TrasladoRegistroInput, list_traslados
+
+    db = SessionLocal()
+    try:
+        rutas = [
+            "CAMPO_A_BENEFICIO",
+            "BENEFICIO_A_SECADO",
+            "SECADO_A_ALMACEN_FINCA",
+            "FINCA_A_TOSTADURIA",
+            "TOSTADURIA_A_SANTO_DOMINGO",
+            "FINCA_A_CLIENTES"
+        ]
+        for ruta in rutas:
+            res = registrar_traslado_ruta(TrasladoRegistroInput(
+                tipo_ruta=ruta,
+                codigo_lote="LOTE-TEST-RUTA",
+                tipo_cafe="PERGAMINO_SECO",
+                cantidad_bultos=15,
+                total_kg=675.0,
+                chofer="Chofer Logística",
+                vehiculo_placa="L-112233",
+                responsable_despacho="Logística Insurrecto",
+                cliente_destino_nombre="Cafetería Especial Santo Domingo" if ruta == "FINCA_A_CLIENTES" else None
+            ), db)
+            assert res["status"] == "REGISTRADO"
+            assert res["tipo_ruta"] == ruta
+
+        lista = list_traslados(db)
+        assert len(lista) >= 6
+    finally:
+        db.close()
+
+# ----------------- PA-36 Nómina: Filtro Fechas (Desde-Hasta), Tarifa Diaria Transparente y Sin Cuadrilla -----------------
+def test_pa36_nomina_filtro_fechas_sin_cuadrilla():
+    from backend.database import SessionLocal
+    from backend.main import get_nomina_liquidacion
+
+    db = SessionLocal()
+    try:
+        # 1. Consulta con rango de fechas
+        nom_rango = get_nomina_liquidacion(
+            fecha_desde="2026-11-01",
+            fecha_hasta="2026-11-07",
+            tarifa_kg=8.0,
+            tarifa_jornada=800.0,
+            db=db
+        )
+        assert nom_rango["fecha_desde"] == "2026-11-01"
+        assert nom_rango["fecha_hasta"] == "2026-11-07"
+        assert "tarifa_dia_rd" in nom_rango["tarifas_aplicadas"]
+        assert nom_rango["tarifas_aplicadas"]["tarifa_dia_rd"] == 800.0
+
+        # Verificar transparencia de tarifa por día y kilo en cada fila
+        for item in nom_rango["detalle"]:
+            assert "tarifa_dia" in item
+            assert "dias_jornada" in item
+            assert "tarifa_kg" in item
+            assert "subtotal_jornada" in item
+            assert "neto_a_pagar" in item
+
+        # 2. Consulta general
+        nom_gen = get_nomina_liquidacion(db=db)
+        assert len(nom_gen["detalle"]) > 0
+    finally:
+        db.close()
+
 
 

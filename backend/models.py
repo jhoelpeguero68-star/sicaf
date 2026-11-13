@@ -44,6 +44,7 @@ class Campo(Base):
     nombre = Column(String(100), nullable=False)
     sector = Column(String(50), nullable=True)
     area_tareas = Column(Float, default=0.0)
+    cantidad_plantas = Column(Integer, default=0) # Cantidad de plantas en el campo
     variedad = Column(String(100), default="Caturra Rojo / Típica")
     tipo_uso = Column(String(50), default="Café Productivo")
     altitud_msnm = Column(Integer, default=1150)
@@ -139,8 +140,12 @@ class RecepcionBeneficio(Base):
     fecha = Column(String(10), nullable=False)
     tipo_proveedor = Column(String(30), default="MYRA_CAFE") # 'MYRA_CAFE' | 'PRODUCTOR_EXTERNO'
     productor_externo_id = Column(Integer, ForeignKey("mae_productores_externos.id"), nullable=True)
+    campo_id = Column(Integer, ForeignKey("mae_campos.id"), nullable=True) # Campo específico si viene de la finca
+    cantidad_bultos = Column(Integer, default=1) # Cantidad de bultos/sacos recibidos
     kg_campo_total = Column(Float, nullable=False)
     kg_validados = Column(Float, nullable=False) # Peso validado en báscula de beneficio
+    kg_lavado_primera = Column(Float, default=0.0) # Kg obtenidos después de lavar Primera
+    kg_lavado_segunda = Column(Float, default=0.0) # Kg obtenidos después de lavar Segunda
     diferencia_kg = Column(Float, default=0.0) # Diferencia de recepción
     pct_fruta_inmadura = Column(Float, default=0.0) # Muestreo manual calidad
     alerta_calidad = Column(Boolean, default=False) # Umbral > 5.0%
@@ -148,6 +153,9 @@ class RecepcionBeneficio(Base):
     validado_por = Column(String(100), nullable=False)
     observaciones = Column(Text, nullable=True)
     creado_en = Column(DateTime, default=datetime.utcnow)
+
+    campo = relationship("Campo")
+    productor_externo = relationship("ProductorExterno")
 
 class Lote(Base):
     __tablename__ = "inv_lotes"
@@ -209,11 +217,16 @@ class SecadoLote(Base):
     almacen_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False) # Almacén Baní o La Peñita
     fecha_inicio = Column(String(10), nullable=False)
     fecha_fin = Column(String(10), nullable=True)
+    cantidad_bultos = Column(Integer, default=1) # Cantidad de bultos/sacos recibidos para secado
+    categoria_cafe = Column(String(30), default="PRIMERA") # 'PRIMERA', 'SEGUNDA', 'BOLA'
+    tipo_cafe_secando = Column(String(50), default="PERGAMINO_MOJADO") # Tipo de café puesto a secar
     peso_inicial_kg = Column(Float, nullable=False)
     peso_final_kg = Column(Float, nullable=True)
     humedad_inicial = Column(Float, default=50.0)
     humedad_final = Column(Float, nullable=True) # Obligatoria al cerrar secado
     dias_secado = Column(Integer, default=0)
+    clima = Column(String(80), default="Soleado")
+    temperatura_c = Column(Float, nullable=True) # Temperatura ambiente °C
     estado = Column(String(30), default="EN_SECADO") # 'EN_SECADO', 'FINALIZADO', 'CUARENTENA'
     responsable = Column(String(100), nullable=False)
     observaciones = Column(Text, nullable=True)
@@ -225,26 +238,49 @@ class MedicionHumedad(Base):
     __tablename__ = "trx_medicion_humedad"
     id = Column(Integer, primary_key=True, index=True)
     secado_id = Column(Integer, ForeignKey("trx_secado_lote.id"), nullable=False)
+    dia_numero = Column(Integer, default=1) # Día 1, 2, 3...
     fecha_hora = Column(DateTime, default=datetime.utcnow)
-    porcentaje_humedad = Column(Float, nullable=False)
+    porcentaje_humedad = Column(Float, nullable=False) # Humedad al finalizar el secado del día
+    humedad_cierre_dia = Column(Boolean, default=True) # Humedad registrada al final de la jornada de secado
+    temperatura_c = Column(Float, nullable=True) # Temperatura °C registrada
     instrumento = Column(String(80), default="Higrómetro Digital Calibrado")
-    clima = Column(String(50), default="Soleado y seco")
+    clima = Column(String(80), default="Soleado y seco")
+    observaciones = Column(String(255), nullable=True)
     responsable = Column(String(100), nullable=False)
 
     secado = relationship("SecadoLote")
 
 class ProcesoTransformacion(Base):
     """
-    Procesos Industriales: Despulpado, Descascarado, Trillado, Selección, Tostado, Molienda, Empaque.
+    Procesos Industriales: Despulpado, Trillado, Tostado, Molienda, Empaque, Despacho.
     Cumple balance de masa F-05 y F-06.
     """
     __tablename__ = "trx_procesos"
     id = Column(Integer, primary_key=True, index=True)
-    tipo_proceso = Column(String(40), nullable=False) # 'DESPULPADO', 'TRILLADO', 'SELECCION', 'TOSTADO', 'MOLIENDA', 'EMPAQUE'
+    tipo_proceso = Column(String(40), nullable=False) # 'DESPULPADO', 'TRILLADO', 'TOSTADO', 'MOLIENDA', 'EMPAQUE', 'DESPACHO_FINAL'
     almacen_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False)
     fecha_inicio = Column(DateTime, default=datetime.utcnow)
     fecha_fin = Column(DateTime, nullable=True)
-    peso_entrada_total = Column(Float, nullable=False)
+    cantidad_bultos_recibidos = Column(Integer, default=0) # Bultos recibidos para el proceso
+    peso_entrada_total = Column(Float, nullable=False) # Kilos recibidos
+    
+    # Trillado: Café verde / oro obtenido por categoría
+    kg_oro_primera = Column(Float, default=0.0) # Verde de Primera obtenido
+    kg_oro_segunda = Column(Float, default=0.0) # Verde de Segunda obtenido
+    
+    # Tostado: Cantidad que pasa a tueste de cada categoría
+    kg_tueste_primera = Column(Float, default=0.0)
+    kg_tueste_segunda = Column(Float, default=0.0)
+    
+    # Empaque: Paquetes / unidades obtenidas de cada SKU
+    sku_id = Column(Integer, ForeignKey("mae_productos_sku.id"), nullable=True)
+    paquetes_obtenidos = Column(Integer, default=0)
+    
+    # Despacho de producto final
+    cliente_destino = Column(String(120), nullable=True)
+    paquetes_despachados = Column(Integer, default=0)
+    documento_despacho = Column(String(60), nullable=True)
+    
     peso_salida_principal = Column(Float, default=0.0)
     peso_subproductos = Column(Float, default=0.0) # Pulpa, cascarilla
     peso_descarte = Column(Float, default=0.0) # Defectos, piedras
@@ -258,6 +294,8 @@ class ProcesoTransformacion(Base):
     estado = Column(String(20), default="FINALIZADO") # 'EN_PROCESO', 'FINALIZADO', 'ANULADO'
     notas = Column(Text, nullable=True)
 
+    sku = relationship("ProductoSKU")
+
 class LoteGenealogia(Base):
     __tablename__ = "inv_lote_genealogia"
     id = Column(Integer, primary_key=True, index=True)
@@ -268,12 +306,27 @@ class LoteGenealogia(Base):
     fraccion_participacion = Column(Float, nullable=False)
 
 class Traslado(Base):
-    """Control de Traslados Rancho Arriba <-> Baní <-> Tostaduría <-> Almacenes (RN-31 a RN-39)"""
+    """
+    Control de Traslados de la cadena:
+    - Campo -> Beneficio
+    - Beneficio -> Área de Secado
+    - Área de Secado -> Almacén de la Finca
+    - Finca -> Tostaduría
+    - Tostaduría -> Almacén de Distribución en Santo Domingo
+    - Finca -> Clientes
+    Registra: fecha, lote/código, tipo de café, cantidad de bultos, kilos, chofer, vehículo, observaciones.
+    """
     __tablename__ = "trx_traslados"
     id = Column(Integer, primary_key=True, index=True)
     numero_guia = Column(String(50), unique=True, index=True, nullable=False)
-    almacen_origen_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False)
-    almacen_destino_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=False)
+    tipo_ruta = Column(String(60), default="INTERNO") 
+    # 'CAMPO_A_BENEFICIO', 'BENEFICIO_A_SECADO', 'SECADO_A_ALMACEN_FINCA', 'FINCA_A_TOSTADURIA', 'TOSTADURIA_A_SANTO_DOMINGO', 'FINCA_A_CLIENTES'
+    codigo_lote = Column(String(60), nullable=True) # Lote o código de café trasladado
+    tipo_cafe = Column(String(50), default="CEREZA") # 'CEREZA', 'PERGAMINO_MOJADO', 'PERGAMINO_SECO', 'ORO', 'TOSTADO', 'EMPACADO'
+    cantidad_bultos = Column(Integer, default=1) # Cantidad de bultos trasladados
+    almacen_origen_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=True)
+    almacen_destino_id = Column(Integer, ForeignKey("mae_almacenes.id"), nullable=True)
+    cliente_destino_nombre = Column(String(120), nullable=True) # Para traslados Finca -> Clientes
     fecha_despacho = Column(DateTime, default=datetime.utcnow)
     fecha_recepcion = Column(DateTime, nullable=True)
     chofer = Column(String(100), nullable=False)
@@ -286,7 +339,6 @@ class Traslado(Base):
     total_kg_recibidos = Column(Float, default=0.0)
     diferencia_kg = Column(Float, default=0.0)
     resolucion_diferencia = Column(String(40), nullable=True) 
-    # 'PESAJE_BASCULA', 'PERDIDA_TRANSPORTE', 'HUMEDAD_EN_TRANSITO', 'RECLAMO_TRANSPORTISTA', 'CORRECCION_DE_DESPACHO'
     autorizado_por = Column(String(100), nullable=True)
     observaciones = Column(Text, nullable=True)
 

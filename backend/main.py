@@ -128,9 +128,12 @@ class RecepcionBeneficioInput(BaseModel):
     fecha: str
     kg_validados: float
     pct_fruta_inmadura: float
-    tipo_proveedor: str = "MYRA_CAFE"
+    tipo_proveedor: str = "MYRA_CAFE" # 'MYRA_CAFE' | 'PRODUCTOR_EXTERNO'
     productor_externo_id: Optional[int] = None
-    campo_id: Optional[int] = None
+    campo_id: Optional[int] = None # Si es de la finca, de qué campo viene
+    cantidad_bultos: Optional[int] = 1 # Cantidad de bultos recibidos
+    kg_lavado_primera: Optional[float] = 0.0 # Kg obtenidos después de lavar Primera
+    kg_lavado_segunda: Optional[float] = 0.0 # Kg obtenidos después de lavar Segunda
     lote_codigo: Optional[str] = None
     clasificacion: str = "PRIMERA" # 'PRIMERA', 'SEGUNDA', 'BOLA', 'MIXTO'
     kg_primera: Optional[float] = None
@@ -143,6 +146,7 @@ class CampoCreateInput(BaseModel):
     nombre: str
     sector: Optional[str] = "General"
     area_tareas: float = 0.0
+    cantidad_plantas: int = 0 # Cantidad de plantas en el campo
     variedad: str = "Caturra Rojo"
     tipo_uso: str = "Café Productivo"
     altitud_msnm: int = 1150
@@ -160,14 +164,24 @@ class SecadoIniciarInput(BaseModel):
     almacen_id: int # 2 = Baní, 3 = La Peñita
     fecha_inicio: str
     peso_inicial_kg: float
+    cantidad_bultos: Optional[int] = 1
+    categoria_cafe: Optional[str] = "PRIMERA" # 'PRIMERA', 'SEGUNDA', 'BOLA'
+    tipo_cafe_secando: Optional[str] = "PERGAMINO_MOJADO"
     humedad_inicial: float = 50.0
+    clima: Optional[str] = "Soleado"
+    temperatura_c: Optional[float] = 26.0
+    observaciones: Optional[str] = None
     responsable: str
 
 class SecadoHumedadInput(BaseModel):
     secado_id: int
     porcentaje_humedad: float
+    dia_numero: Optional[int] = 1
+    humedad_cierre_dia: Optional[bool] = True
+    temperatura_c: Optional[float] = 26.0
     instrumento: str = "Higrómetro Digital"
     clima: str = "Soleado"
+    observaciones: Optional[str] = None
     responsable: str
 
 class SecadoFinalizarInput(BaseModel):
@@ -178,9 +192,9 @@ class SecadoFinalizarInput(BaseModel):
     responsable: str
 
 class TrasladoDespachoInput(BaseModel):
+    lote_id: int
     almacen_origen_id: int
     almacen_destino_id: int
-    lote_id: int
     kg_despachados: float
     chofer: str
     vehiculo_placa: str
@@ -191,21 +205,36 @@ class TrasladoRecepcionInput(BaseModel):
     traslado_id: int
     kg_recibidos: float
     responsable_recepcion: str
-    resolucion_diferencia: Optional[str] = "PESAJE_BASCULA"
+    resolucion_diferencia: Optional[str] = None
     autorizado_por: Optional[str] = None
+
+class TrasladoRegistroInput(BaseModel):
+    tipo_ruta: str # 'CAMPO_A_BENEFICIO', 'BENEFICIO_A_SECADO', 'SECADO_A_ALMACEN_FINCA', 'FINCA_A_TOSTADURIA', 'TOSTADURIA_A_SANTO_DOMINGO', 'FINCA_A_CLIENTES'
+    codigo_lote: Optional[str] = None
+    tipo_cafe: str = "CEREZA" # 'CEREZA', 'PERGAMINO_MOJADO', 'PERGAMINO_SECO', 'ORO', 'TOSTADO', 'EMPACADO'
+    cantidad_bultos: int = 1
+    total_kg: float
+    almacen_origen_id: Optional[int] = None
+    almacen_destino_id: Optional[int] = None
+    cliente_destino_nombre: Optional[str] = None
+    chofer: str
+    vehiculo_placa: str
+    responsable_despacho: str
     observaciones: Optional[str] = None
 
 class TrilladoInput(BaseModel):
     lote_pergamino_id: int
-    kg_pergamino: float
-    kg_oro_primera: float
-    kg_oro_segunda: float = 0.0
+    cantidad_bultos_recibidos: Optional[int] = 1
+    kg_pergamino: float # Kilos recibidos
+    kg_oro_primera: float # Café verde de primera obtenido
+    kg_oro_segunda: float = 0.0 # Café verde de segunda obtenido
     kg_cascarilla: float = 0.0
     kg_descarte: float = 0.0
     responsable: str = "Encargado Tostaduría"
 
 class TostadoInput(BaseModel):
     lote_oro_id: int
+    categoria: str = "PRIMERA" # Cantidad que pasa a tueste de cada categoría ('PRIMERA' | 'SEGUNDA')
     kg_oro: float
     kg_tostado: float
     grado_tueste: str = "Medio" # Claro, Medio, Oscuro
@@ -214,9 +243,19 @@ class TostadoInput(BaseModel):
 class EmpaqueInput(BaseModel):
     lote_tostado_id: int
     sku_id: int
-    unidades: int
+    unidades: int # Paquetes obtenidos de cada producto
     formato: str = "GRANO" # GRANO | MOLIDO
     responsable: str = "Encargado de Empaque"
+
+class DespachoProductoFinalInput(BaseModel):
+    sku_id: int
+    cliente_destino: str
+    paquetes_despachados: int
+    documento_despacho: str
+    chofer: Optional[str] = "Transporte Distribución"
+    vehiculo_placa: Optional[str] = "L-000000"
+    responsable: str = "Encargado de Despacho"
+    observaciones: Optional[str] = None
 
 class ConteoAjusteInput(BaseModel):
     almacen_id: int
@@ -429,6 +468,7 @@ def list_campos(db: Session = Depends(get_db)):
             "nombre": c.nombre,
             "sector": c.sector,
             "area_tareas": c.area_tareas,
+            "cantidad_plantas": c.cantidad_plantas or 0,
             "variedad": c.variedad,
             "tipo_uso": c.tipo_uso,
             "altitud_msnm": c.altitud_msnm,
@@ -438,6 +478,42 @@ def list_campos(db: Session = Depends(get_db)):
             "kg_ha": prod["kg_ha"]
         })
     return res
+
+@app.post("/api/campos")
+def crear_campo(item: CampoCreateInput, db: Session = Depends(get_db)):
+    """Alta de nuevo campo en Finca La Peñita con cantidad de plantas"""
+    existente = db.query(Campo).filter(Campo.codigo == item.codigo.upper().strip()).first()
+    if existente:
+        raise HTTPException(status_code=400, detail="Código de campo ya existente")
+    
+    campo = Campo(
+        codigo=item.codigo.upper().strip(),
+        nombre=item.nombre.strip(),
+        sector=item.sector or "General",
+        area_tareas=item.area_tareas,
+        cantidad_plantas=item.cantidad_plantas or 0,
+        variedad=item.variedad or "Caturra Rojo",
+        tipo_uso=item.tipo_uso or "Café Productivo",
+        altitud_msnm=item.altitud_msnm or 1150,
+        activo=True
+    )
+    db.add(campo)
+    db.commit()
+    db.refresh(campo)
+
+    registrar_auditoria(db, "Administrador Agrícola", "CREAR_CAMPO", "mae_campos", str(campo.id), f"Nuevo campo creado: {campo.nombre} ({campo.codigo}) con {campo.cantidad_plantas} plantas")
+
+    return {
+        "status": "SUCCESS",
+        "mensaje": "Campo registrado exitosamente",
+        "campo": {
+            "id": campo.id,
+            "codigo": campo.codigo,
+            "nombre": campo.nombre,
+            "cantidad_plantas": campo.cantidad_plantas,
+            "area_tareas": campo.area_tareas
+        }
+    }
 
 @app.get("/api/campos/{campo_id}/historial")
 def get_campo_historial(campo_id: int, db: Session = Depends(get_db)):
@@ -479,6 +555,7 @@ def get_campo_historial(campo_id: int, db: Session = Depends(get_db)):
             "nombre": campo.nombre,
             "sector": campo.sector,
             "area_tareas": campo.area_tareas,
+            "cantidad_plantas": campo.cantidad_plantas or 0,
             "area_hectareas": round(campo.area_tareas * 0.062886, 2),
             "variedad": campo.variedad,
             "tipo_uso": campo.tipo_uso,
@@ -630,7 +707,27 @@ def registrar_cosecha(item: CosechaRegistroInput, db: Session = Depends(get_db))
 # ----------------- BENEFICIO, RECEPCIÓN Y MUESTREO (RN-13, RN-16, RN-51, PA-02, PA-21) -----------------
 @app.get("/api/recepcion")
 def list_recepciones(db: Session = Depends(get_db)):
-    return db.query(RecepcionBeneficio).order_by(RecepcionBeneficio.id.desc()).all()
+    recs = db.query(RecepcionBeneficio).order_by(RecepcionBeneficio.id.desc()).all()
+    res = []
+    for r in recs:
+        res.append({
+            "id": r.id,
+            "fecha": r.fecha,
+            "tipo_proveedor": r.tipo_proveedor,
+            "productor_externo": r.productor_externo.nombre if r.productor_externo else None,
+            "campo_id": r.campo_id,
+            "campo_nombre": r.campo.nombre if r.campo else None,
+            "cantidad_bultos": r.cantidad_bultos or 1,
+            "kg_validados": r.kg_validados,
+            "kg_lavado_primera": r.kg_lavado_primera or 0.0,
+            "kg_lavado_segunda": r.kg_lavado_segunda or 0.0,
+            "pct_fruta_inmadura": r.pct_fruta_inmadura,
+            "alerta_calidad": r.alerta_calidad,
+            "lote_codigo": r.lote_codigo,
+            "validado_por": r.validado_por,
+            "observaciones": r.observaciones
+        })
+    return res
 
 @app.post("/api/recepcion")
 def validar_recepcion_beneficio(item: RecepcionBeneficioInput, db: Session = Depends(get_db)):
@@ -650,8 +747,12 @@ def validar_recepcion_beneficio(item: RecepcionBeneficioInput, db: Session = Dep
         fecha=item.fecha,
         tipo_proveedor=item.tipo_proveedor,
         productor_externo_id=item.productor_externo_id,
+        campo_id=item.campo_id,
+        cantidad_bultos=item.cantidad_bultos or 1,
         kg_campo_total=total_campo,
         kg_validados=item.kg_validados,
+        kg_lavado_primera=item.kg_lavado_primera or 0.0,
+        kg_lavado_segunda=item.kg_lavado_segunda or 0.0,
         diferencia_kg=diferencia,
         pct_fruta_inmadura=item.pct_fruta_inmadura,
         alerta_calidad=alerta_calidad,
@@ -823,14 +924,29 @@ def list_secado(db: Session = Depends(get_db)):
             "almacen": s.almacen.nombre if s.almacen else "",
             "fecha_inicio": s.fecha_inicio,
             "fecha_fin": s.fecha_fin,
+            "cantidad_bultos": s.cantidad_bultos or 1,
+            "categoria_cafe": s.categoria_cafe or "PRIMERA",
+            "tipo_cafe_secando": s.tipo_cafe_secando or "PERGAMINO_MOJADO",
             "peso_inicial_kg": s.peso_inicial_kg,
             "peso_final_kg": s.peso_final_kg,
             "humedad_actual": ult_hum,
             "humedad_final": s.humedad_final,
             "dias_secado": s.dias_secado,
+            "clima": s.clima or "Soleado",
+            "temperatura_c": s.temperatura_c,
             "estado": s.estado,
             "responsable": s.responsable,
-            "mediciones": [{"humedad": m.porcentaje_humedad, "fecha": str(m.fecha_hora), "instrumento": m.instrumento} for m in meds]
+            "mediciones": [
+                {
+                    "dia_numero": m.dia_numero,
+                    "humedad": m.porcentaje_humedad,
+                    "temperatura_c": m.temperatura_c,
+                    "clima": m.clima,
+                    "fecha": str(m.fecha_hora),
+                    "observaciones": m.observaciones,
+                    "instrumento": m.instrumento
+                } for m in meds
+            ]
         })
     return res
 
@@ -844,8 +960,14 @@ def iniciar_secado(item: SecadoIniciarInput, db: Session = Depends(get_db)):
         lote_id=item.lote_id,
         almacen_id=item.almacen_id,
         fecha_inicio=item.fecha_inicio,
+        cantidad_bultos=item.cantidad_bultos or 1,
+        categoria_cafe=item.categoria_cafe or "PRIMERA",
+        tipo_cafe_secando=item.tipo_cafe_secando or "PERGAMINO_MOJADO",
         peso_inicial_kg=item.peso_inicial_kg,
         humedad_inicial=item.humedad_inicial,
+        clima=item.clima or "Soleado",
+        temperatura_c=item.temperatura_c,
+        observaciones=item.observaciones,
         estado="EN_SECADO",
         responsable=item.responsable
     )
@@ -864,9 +986,13 @@ def registrar_humedad_secado(item: SecadoHumedadInput, db: Session = Depends(get
     
     med = MedicionHumedad(
         secado_id=item.secado_id,
+        dia_numero=item.dia_numero or 1,
         porcentaje_humedad=item.porcentaje_humedad,
+        humedad_cierre_dia=item.humedad_cierre_dia if item.humedad_cierre_dia is not None else True,
+        temperatura_c=item.temperatura_c,
         instrumento=item.instrumento,
         clima=item.clima,
+        observaciones=item.observaciones,
         responsable=item.responsable
     )
     db.add(med)
@@ -921,8 +1047,12 @@ def list_traslados(db: Session = Depends(get_db)):
         {
             "id": t.id,
             "numero_guia": t.numero_guia,
-            "origen": t.almacen_origen.nombre if t.almacen_origen else "",
-            "destino": t.almacen_destino.nombre if t.almacen_destino else "",
+            "tipo_ruta": t.tipo_ruta or "INTERNO",
+            "codigo_lote": t.codigo_lote or "N/A",
+            "tipo_cafe": t.tipo_cafe or "CEREZA",
+            "cantidad_bultos": t.cantidad_bultos or 1,
+            "origen": t.almacen_origen.nombre if t.almacen_origen else ("Campo de Cosecha" if t.tipo_ruta == "CAMPO_A_BENEFICIO" else "Origen"),
+            "destino": t.cliente_destino_nombre if (t.tipo_ruta == "FINCA_A_CLIENTES" and t.cliente_destino_nombre) else (t.almacen_destino.nombre if t.almacen_destino else "Destino"),
             "fecha_despacho": str(t.fecha_despacho),
             "fecha_recepcion": str(t.fecha_recepcion) if t.fecha_recepcion else None,
             "chofer": t.chofer,
@@ -931,9 +1061,77 @@ def list_traslados(db: Session = Depends(get_db)):
             "kg_recibidos": t.total_kg_recibidos,
             "diferencia_kg": t.diferencia_kg,
             "estado": t.estado,
-            "resolucion": t.resolucion_diferencia
+            "resolucion": t.resolucion_diferencia,
+            "observaciones": t.observaciones
         } for t in traslados
     ]
+
+@app.post("/api/traslados/registrar-ruta")
+def registrar_traslado_ruta(item: TrasladoRegistroInput, db: Session = Depends(get_db)):
+    """
+    Registra traslado entre cualquiera de las 6 rutas operativas de SICAF:
+    1. Campo -> Beneficio
+    2. Beneficio -> Área de Secado
+    3. Área de Secado -> Almacén de la Finca
+    4. Finca -> Tostaduría
+    5. Tostaduría -> Almacén de Distribución en Santo Domingo
+    6. Finca -> Clientes
+    Registra: fecha, lote o código, tipo de café, cantidad de bultos, kilos, chofer, vehículo y observaciones.
+    """
+    ruta_almacenes = {
+        "CAMPO_A_BENEFICIO": (3, 1), # Finca La Peñita (Almacén 3) -> Beneficio Rancho Arriba (Almacén 1)
+        "BENEFICIO_A_SECADO": (1, 2), # Beneficio (1) -> Secado Baní (2)
+        "SECADO_A_ALMACEN_FINCA": (2, 3), # Secado Baní (2) -> Almacén Finca La Peñita (3)
+        "FINCA_A_TOSTADURIA": (3, 4), # Almacén Finca (3) -> Tostaduría Insurrecto (4)
+        "TOSTADURIA_A_SANTO_DOMINGO": (4, 5), # Tostaduría (4) -> Almacén Distribución Santo Domingo (5)
+        "FINCA_A_CLIENTES": (3, 5), # Finca (3) -> Distribución/Clientes (5)
+    }
+    
+    orig_id = item.almacen_origen_id
+    dest_id = item.almacen_destino_id
+    
+    if orig_id is None or dest_id is None:
+        def_orig, def_dest = ruta_almacenes.get(item.tipo_ruta, (1, 2))
+        orig_id = orig_id if orig_id is not None else def_orig
+        dest_id = dest_id if dest_id is not None else def_dest
+
+    guia = f"TR-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
+    traslado = Traslado(
+        numero_guia=guia,
+        tipo_ruta=item.tipo_ruta,
+        codigo_lote=item.codigo_lote or f"LOTE-{item.tipo_cafe[:3]}-{datetime.now().strftime('%m%d')}",
+        tipo_cafe=item.tipo_cafe,
+        cantidad_bultos=item.cantidad_bultos,
+        almacen_origen_id=orig_id,
+        almacen_destino_id=dest_id,
+        cliente_destino_nombre=item.cliente_destino_nombre,
+        chofer=item.chofer,
+        vehiculo_placa=item.vehiculo_placa,
+        responsable_despacho=item.responsable_despacho,
+        total_kg_despachados=item.total_kg,
+        total_kg_recibidos=item.total_kg,
+        estado="CONCILIADO",
+        observaciones=item.observaciones
+    )
+    db.add(traslado)
+    db.commit()
+    db.refresh(traslado)
+
+    registrar_auditoria(
+        db, item.responsable_despacho, "REGISTRO_TRASLADO_RUTA", "trx_traslados", str(traslado.id),
+        f"Traslado {item.tipo_ruta} ({guia}): {item.cantidad_bultos} bultos, {item.total_kg} kg de {item.tipo_cafe}. Chofer: {item.chofer} [{item.vehiculo_placa}]"
+    )
+
+    return {
+        "status": "REGISTRADO",
+        "traslado_id": traslado.id,
+        "numero_guia": guia,
+        "tipo_ruta": item.tipo_ruta,
+        "codigo_lote": traslado.codigo_lote,
+        "tipo_cafe": item.tipo_cafe,
+        "cantidad_bultos": item.cantidad_bultos,
+        "total_kg": item.total_kg
+    }
 
 @app.post("/api/traslados/despachar")
 def despachar_traslado(item: TrasladoDespachoInput, db: Session = Depends(get_db)):
@@ -1221,10 +1419,68 @@ def recibir_traslado_con_sacos(item: TrasladoSacosRecepcionInput, db: Session = 
         "mensaje": f"Alerta: {len(sacos_faltantes)} saco(s) faltante(s) o diferencia fuera de tolerancia (0.5%)." if fuera_tolerancia else "Todos los sacos llegaron conformes al almacén destino."
     }
 
-# ----------------- TRILLADO, TOSTADO Y EMPAQUE (F-01 a F-06 / RN-45 a RN-49 / PA-04, PA-23, PA-24) -----------------
+# ----------------- TRILLADO, TOSTADO, EMPAQUE Y DESPACHO (F-01 a F-06 / RN-45 a RN-49 / PA-04, PA-23, PA-24) -----------------
+@app.get("/api/skus")
+def list_skus(db: Session = Depends(get_db)):
+    """Catálogo oficial de los 6 SKUs terminados de Insurrecto Coffee y Café El Vecino"""
+    skus = db.query(ProductoSKU).filter(ProductoSKU.activo == True).all()
+    return [
+        {
+            "id": s.id,
+            "sku": s.sku,
+            "nombre": f"{s.marca} {s.presentacion} - {s.formato}",
+            "marca": s.marca,
+            "presentacion": s.presentacion,
+            "formato": s.formato,
+            "peso_neto_kg": s.peso_neto_kg,
+            "activo": s.activo
+        } for s in skus
+    ]
+
+@app.get("/api/procesos")
+def list_procesos(tipo: Optional[str] = None, db: Session = Depends(get_db)):
+    """Historial de transformaciones: Despulpado, Trillado, Tostado, Empaque, Despacho Final"""
+    q = db.query(ProcesoTransformacion)
+    if tipo:
+        q = q.filter(ProcesoTransformacion.tipo_proceso == tipo.upper())
+    procesos = q.order_by(ProcesoTransformacion.id.desc()).all()
+    res = []
+    for p in procesos:
+        sku_nombre = None
+        if p.sku_id:
+            s = db.query(ProductoSKU).filter(ProductoSKU.id == p.sku_id).first()
+            if s:
+                sku_nombre = f"{s.sku} - {s.marca} {s.presentacion}"
+        res.append({
+            "id": p.id,
+            "tipo_proceso": p.tipo_proceso,
+            "almacen_id": p.almacen_id,
+            "almacen_nombre": p.almacen.nombre if p.almacen else "N/A",
+            "fecha_inicio": str(p.fecha_inicio),
+            "cantidad_bultos_recibidos": p.cantidad_bultos_recibidos,
+            "peso_entrada_total": p.peso_entrada_total,
+            "kg_oro_primera": p.kg_oro_primera,
+            "kg_oro_segunda": p.kg_oro_segunda,
+            "kg_tueste_primera": p.kg_tueste_primera,
+            "kg_tueste_segunda": p.kg_tueste_segunda,
+            "sku_id": p.sku_id,
+            "sku_nombre": sku_nombre,
+            "paquetes_obtenidos": p.paquetes_obtenidos,
+            "cliente_destino": p.cliente_destino,
+            "paquetes_despachados": p.paquetes_despachados,
+            "documento_despacho": p.documento_despacho,
+            "peso_salida_principal": p.peso_salida_principal,
+            "peso_subproductos": p.peso_subproductos,
+            "peso_descarte": p.peso_descarte,
+            "residual_kg": p.residual_kg,
+            "residual_pct": p.residual_pct,
+            "alerta_balance": p.alerta_balance
+        })
+    return res
+
 @app.post("/api/trillado")
 def proceso_trillado(item: TrilladoInput, db: Session = Depends(get_db)):
-    """Trillado: Pergamino Seco -> Café Oro + Cascarilla + Pasilla (Balance de masa F-05/F-06)"""
+    """Trillado: Pergamino Seco -> Café Verde Primera y Segunda + Cascarilla + Pasilla (F-05/F-06)"""
     lote_perg = db.query(Lote).filter(Lote.id == item.lote_pergamino_id).first()
     if not lote_perg or lote_perg.kg_disponibles < item.kg_pergamino:
         raise HTTPException(status_code=400, detail="Stock de pergamino insuficiente")
@@ -1239,8 +1495,8 @@ def proceso_trillado(item: TrilladoInput, db: Session = Depends(get_db)):
     if lote_perg.kg_disponibles <= 0:
         lote_perg.activo = False
 
-    # Crear Lote Café Oro
-    cod_oro = f"{lote_perg.codigo}-ORO"
+    # Crear Lote Café Oro Primera
+    cod_oro = f"{lote_perg.codigo}-ORO-P1"
     lote_oro = Lote(
         codigo=cod_oro, empresa_propietaria="Insurrecto Coffee", origen_tipo=lote_perg.origen_tipo,
         variedad=lote_perg.variedad, clasificacion="PRIMERA", estado_cafe="ORO",
@@ -1250,19 +1506,60 @@ def proceso_trillado(item: TrilladoInput, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(lote_oro)
 
+    # Si hay café verde de segunda obtenido en el trillado
+    cod_segunda = None
+    if item.kg_oro_segunda > 0:
+        cod_segunda = f"{lote_perg.codigo}-ORO-S2"
+        lote_seg = Lote(
+            codigo=cod_segunda, empresa_propietaria="Insurrecto Coffee", origen_tipo=lote_perg.origen_tipo,
+            variedad=lote_perg.variedad, clasificacion="SEGUNDA", estado_cafe="ORO",
+            humedad_actual=11.5, almacen_actual_id=4, kg_disponibles=item.kg_oro_segunda
+        )
+        db.add(lote_seg)
+        db.commit()
+        db.refresh(lote_seg)
+        db.add(LoteGenealogia(lote_padre_id=lote_perg.id, lote_hijo_id=lote_seg.id, kg_aportados=item.kg_oro_segunda, fraccion_participacion=item.kg_oro_segunda/pi))
+        db.add(MovimientoInventario(lote_id=lote_seg.id, almacen_id=4, tipo_movimiento="PRODUCCION_PROCESO", kg_afectados=item.kg_oro_segunda, documento_ref="TRILLADO", usuario=item.responsable, observacion="Producción verde Segunda"))
+
     # Genealogía
-    db.add(LoteGenealogia(lote_padre_id=lote_perg.id, lote_hijo_id=lote_oro.id, kg_aportados=pi, fraccion_participacion=1.0))
+    db.add(LoteGenealogia(lote_padre_id=lote_perg.id, lote_hijo_id=lote_oro.id, kg_aportados=item.kg_oro_primera, fraccion_participacion=item.kg_oro_primera/pi))
     
     # Movimientos en libro mayor
     db.add(MovimientoInventario(lote_id=lote_perg.id, almacen_id=lote_perg.almacen_actual_id, tipo_movimiento="CONSUMO_PROCESO", kg_afectados=-pi, documento_ref="TRILLADO", usuario=item.responsable))
-    db.add(MovimientoInventario(lote_id=lote_oro.id, almacen_id=4, tipo_movimiento="PRODUCCION_PROCESO", kg_afectados=item.kg_oro_primera, documento_ref="TRILLADO", usuario=item.responsable))
+    db.add(MovimientoInventario(lote_id=lote_oro.id, almacen_id=4, tipo_movimiento="PRODUCCION_PROCESO", kg_afectados=item.kg_oro_primera, documento_ref="TRILLADO", usuario=item.responsable, observacion="Producción verde Primera"))
+
+    # Registrar proceso de transformación
+    proc = ProcesoTransformacion(
+        tipo_proceso="TRILLADO",
+        almacen_id=4,
+        responsable=item.responsable,
+        cantidad_bultos_recibidos=item.cantidad_bultos_recibidos or 1,
+        peso_entrada_total=pi,
+        kg_oro_primera=item.kg_oro_primera,
+        kg_oro_segunda=item.kg_oro_segunda,
+        peso_salida_principal=salida_prod,
+        peso_subproductos=item.kg_cascarilla,
+        peso_descarte=item.kg_descarte,
+        residual_kg=bm["residual_kg"],
+        residual_pct=bm["residual_pct"],
+        alerta_balance=alerta_residual,
+        fecha_fin=datetime.utcnow()
+    )
+    db.add(proc)
     db.commit()
 
     fr = f08_factor_rendimiento(pi, item.kg_oro_primera, 70.0)
 
+    registrar_auditoria(
+        db, item.responsable, "TRILLADO", "trx_procesos", str(proc.id),
+        f"Trillado de {pi} kg pergamino ({item.cantidad_bultos_recibidos} bultos) -> Verde P1: {item.kg_oro_primera} kg, Verde S2: {item.kg_oro_segunda} kg"
+    )
+
     return {
         "status": "TRILLADO_COMPLETADO",
-        "lote_oro_creado": cod_oro,
+        "proceso_id": proc.id,
+        "lote_oro_primera": cod_oro,
+        "lote_oro_segunda": cod_segunda,
         "rendimiento_trillado_pct": f01_rendimiento_etapa(pi, salida_prod),
         "factor_rendimiento_FR": fr,
         "balance_masa": bm,
@@ -1271,23 +1568,23 @@ def proceso_trillado(item: TrilladoInput, db: Session = Depends(get_db)):
 
 @app.post("/api/tostado")
 def proceso_tostado(item: TostadoInput, db: Session = Depends(get_db)):
-    """Tostado: Café Oro -> Café Tostado (RN-45)"""
+    """Tostado: Café Verde (Primera o Segunda) -> Café Tostado (RN-45)"""
     lote_oro = db.query(Lote).filter(Lote.id == item.lote_oro_id).first()
     if not lote_oro or lote_oro.kg_disponibles < item.kg_oro:
         raise HTTPException(status_code=400, detail="Stock de café oro insuficiente")
 
     pi = item.kg_oro
     pf = item.kg_tostado
-    bm = f05_f06_balance_masa(pi, pf)
+    cat_tueste = item.categoria.upper().strip() if item.categoria else "PRIMERA"
 
     lote_oro.kg_disponibles -= pi
     if lote_oro.kg_disponibles <= 0:
         lote_oro.activo = False
 
-    cod_tost = f"{lote_oro.codigo}-TOST"
+    cod_tost = f"{lote_oro.codigo}-TOST-{cat_tueste[:3]}"
     lote_tost = Lote(
         codigo=cod_tost, empresa_propietaria="Insurrecto Coffee", origen_tipo=lote_oro.origen_tipo,
-        variedad=lote_oro.variedad, clasificacion=lote_oro.clasificacion, estado_cafe="TOSTADO",
+        variedad=lote_oro.variedad, clasificacion=cat_tueste, estado_cafe="TOSTADO",
         humedad_actual=2.1, almacen_actual_id=4, kg_disponibles=pf
     )
     db.add(lote_tost)
@@ -1296,12 +1593,34 @@ def proceso_tostado(item: TostadoInput, db: Session = Depends(get_db)):
 
     db.add(LoteGenealogia(lote_padre_id=lote_oro.id, lote_hijo_id=lote_tost.id, kg_aportados=pi, fraccion_participacion=1.0))
     db.add(MovimientoInventario(lote_id=lote_oro.id, almacen_id=4, tipo_movimiento="CONSUMO_PROCESO", kg_afectados=-pi, documento_ref="TOSTADO", usuario=item.responsable))
-    db.add(MovimientoInventario(lote_id=lote_tost.id, almacen_id=4, tipo_movimiento="PRODUCCION_PROCESO", kg_afectados=pf, documento_ref="TOSTADO", usuario=item.responsable))
+    db.add(MovimientoInventario(lote_id=lote_tost.id, almacen_id=4, tipo_movimiento="PRODUCCION_PROCESO", kg_afectados=pf, documento_ref="TOSTADO", usuario=item.responsable, observacion=f"Tostado [{cat_tueste}]"))
+    
+    # Registrar proceso
+    proc = ProcesoTransformacion(
+        tipo_proceso="TOSTADO",
+        almacen_id=4,
+        responsable=item.responsable,
+        peso_entrada_total=pi,
+        kg_tueste_primera=pi if cat_tueste == "PRIMERA" else 0.0,
+        kg_tueste_segunda=pi if cat_tueste == "SEGUNDA" else 0.0,
+        peso_salida_principal=pf,
+        residual_kg=round(pi - pf, 2),
+        residual_pct=f03_merma_porcentual(pi, pf),
+        fecha_fin=datetime.utcnow()
+    )
+    db.add(proc)
     db.commit()
+
+    registrar_auditoria(
+        db, item.responsable, "TOSTADO", "trx_procesos", str(proc.id),
+        f"Tostado de {pi} kg [{cat_tueste}] -> {pf} kg café tostado ({cod_tost}). Grado: {item.grado_tueste}"
+    )
 
     return {
         "status": "TOSTADO_COMPLETADO",
+        "proceso_id": proc.id,
         "lote_tostado_creado": cod_tost,
+        "categoria": cat_tueste,
         "rendimiento_tostado_pct": f01_rendimiento_etapa(pi, pf),
         "merma_tostado_pct": f03_merma_porcentual(pi, pf),
         "grado_tueste": item.grado_tueste
@@ -1310,8 +1629,8 @@ def proceso_tostado(item: TostadoInput, db: Session = Depends(get_db)):
 @app.post("/api/empaque")
 def proceso_empaque(item: EmpaqueInput, db: Session = Depends(get_db)):
     """
-    Empaque de café 100% puro (Café El Vecino / Insurrecto Morning Blend).
-    Descuenta café tostado y da entrada al SKU terminado (RN-46b, RN-48, PA-23, PA-24).
+    Empaque de café 100% puro para los 6 SKUs oficiales de Insurrecto Coffee y Café El Vecino.
+    Descuenta café tostado y da entrada a unidades terminadas en Almacén Santo Domingo (RN-46b, RN-48).
     """
     lote_tost = db.query(Lote).filter(Lote.id == item.lote_tostado_id).first()
     sku = db.query(ProductoSKU).filter(ProductoSKU.id == item.sku_id).first()
@@ -1323,29 +1642,111 @@ def proceso_empaque(item: EmpaqueInput, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"Stock insuficiente. Se requieren {kg_necesarios} kg, disponibles {lote_tost.kg_disponibles} kg")
 
     lote_tost.kg_disponibles -= kg_necesarios
-    cod_emp = f"EMP-{sku.sku}-{datetime.now().strftime('%Y%m%d')}"
+    cod_emp = f"EMP-{sku.sku}-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
 
     lote_emp = Lote(
         codigo=cod_emp, empresa_propietaria="Insurrecto Coffee", origen_tipo=lote_tost.origen_tipo,
-        variedad=lote_tost.variedad, clasificacion="PRIMERA", estado_cafe="EMPACADO",
+        variedad=lote_tost.variedad, clasificacion=lote_tost.clasificacion, estado_cafe="EMPACADO",
         humedad_actual=2.0, almacen_actual_id=5, kg_disponibles=kg_necesarios # Entra a Almacén Santo Domingo
     )
     db.add(lote_emp)
     db.commit()
     db.refresh(lote_emp)
 
+    sku_desc = f"{sku.marca} {sku.presentacion}"
     db.add(LoteGenealogia(lote_padre_id=lote_tost.id, lote_hijo_id=lote_emp.id, kg_aportados=kg_necesarios, fraccion_participacion=1.0))
     db.add(MovimientoInventario(lote_id=lote_tost.id, almacen_id=4, tipo_movimiento="CONSUMO_PROCESO", kg_afectados=-kg_necesarios, documento_ref=cod_emp, usuario=item.responsable))
-    db.add(MovimientoInventario(lote_id=lote_emp.id, almacen_id=5, tipo_movimiento="PRODUCCION_PROCESO", kg_afectados=kg_necesarios, documento_ref=cod_emp, usuario=item.responsable))
+    db.add(MovimientoInventario(lote_id=lote_emp.id, almacen_id=5, tipo_movimiento="PRODUCCION_PROCESO", kg_afectados=kg_necesarios, documento_ref=cod_emp, usuario=item.responsable, observacion=f"Empacado {item.unidades} paq {sku_desc}"))
+
+    # Registrar proceso de empaque
+    proc = ProcesoTransformacion(
+        tipo_proceso="EMPAQUE",
+        almacen_id=5,
+        responsable=item.responsable,
+        peso_entrada_total=kg_necesarios,
+        peso_salida_principal=kg_necesarios,
+        sku_id=sku.id,
+        paquetes_obtenidos=item.unidades,
+        fecha_fin=datetime.utcnow()
+    )
+    db.add(proc)
     db.commit()
+
+    registrar_auditoria(
+        db, item.responsable, "EMPAQUE", "trx_procesos", str(proc.id),
+        f"Empaque de {item.unidades} paquetes de {sku_desc} ({kg_necesarios} kg de café tostado)"
+    )
 
     return {
         "status": "EMPAQUE_COMPLETADO",
+        "proceso_id": proc.id,
         "lote_comercial": cod_emp,
         "sku": sku.sku,
+        "nombre_producto": sku_desc,
         "marca": sku.marca,
         "unidades_producidas": item.unidades,
         "kg_consumidos": kg_necesarios
+    }
+
+@app.post("/api/despacho-final")
+def despacho_producto_final(item: DespachoProductoFinalInput, db: Session = Depends(get_db)):
+    """
+    Registra el despacho de producto terminado a clientes finales o centros de distribución.
+    """
+    sku = db.query(ProductoSKU).filter(ProductoSKU.id == item.sku_id).first()
+    if not sku:
+        raise HTTPException(status_code=404, detail="SKU no encontrado")
+
+    sku_desc = f"{sku.marca} {sku.presentacion}"
+    kg_despachados = round(item.paquetes_despachados * sku.peso_neto_kg, 3)
+
+    # Identificar lote de producto terminado en almacén Santo Domingo
+    lote_emp = db.query(Lote).filter(Lote.almacen_actual_id == 5, Lote.estado_cafe == "EMPACADO").order_by(Lote.id.desc()).first()
+    if not lote_emp:
+        lote_emp = db.query(Lote).order_by(Lote.id.desc()).first()
+    lote_id_mov = lote_emp.id if lote_emp else 1
+
+    if lote_emp and lote_emp.kg_disponibles >= kg_despachados:
+        lote_emp.kg_disponibles = round(lote_emp.kg_disponibles - kg_despachados, 3)
+
+    proc = ProcesoTransformacion(
+        tipo_proceso="DESPACHO_FINAL",
+        almacen_id=5,
+        responsable=item.responsable,
+        peso_entrada_total=kg_despachados,
+        peso_salida_principal=kg_despachados,
+        sku_id=sku.id,
+        cliente_destino=item.cliente_destino,
+        paquetes_despachados=item.paquetes_despachados,
+        documento_despacho=item.documento_despacho,
+        fecha_fin=datetime.utcnow()
+    )
+    db.add(proc)
+
+    db.add(MovimientoInventario(
+        lote_id=lote_id_mov,
+        almacen_id=5,
+        tipo_movimiento="DESPACHO_CLIENTE",
+        kg_afectados=-kg_despachados,
+        documento_ref=item.documento_despacho,
+        usuario=item.responsable,
+        observacion=f"Despacho {item.paquetes_despachados} paq {sku_desc} para {item.cliente_destino} (Chofer: {item.chofer}, Placa: {item.vehiculo_placa})"
+    ))
+    db.commit()
+
+    registrar_auditoria(
+        db, item.responsable, "DESPACHO_FINAL", "trx_procesos", str(proc.id),
+        f"Despacho final: {item.paquetes_despachados} paquetes de {sku_desc} a {item.cliente_destino} ({item.documento_despacho})"
+    )
+
+    return {
+        "status": "DESPACHADO",
+        "proceso_id": proc.id,
+        "sku": sku.sku,
+        "cliente_destino": item.cliente_destino,
+        "paquetes_despachados": item.paquetes_despachados,
+        "kg_totales": kg_despachados,
+        "documento_despacho": item.documento_despacho
     }
 
 # ----------------- TRAZABILIDAD INVERSA DEL PAQUETE AL CAMPO (RN-47 / PA-08 / PA-22) -----------------
@@ -1541,17 +1942,17 @@ def agregar_ajuste_nomina(item: NominaAjusteInput, db: Session = Depends(get_db)
 
 @app.get("/api/nomina/liquidacion")
 def get_nomina_liquidacion(
+    fecha_desde: Optional[str] = None,
+    fecha_hasta: Optional[str] = None,
     tarifa_kg: Optional[float] = None,
     tarifa_jornada: Optional[float] = None,
     db: Session = Depends(get_db)
 ):
     """
-    Liquidación oficial semanal de nómina de cosecha (F-14, F-15, F-16).
-    Lee las tarifas administrativas configuradas por la gerencia y desglosa:
-    - Pagos por kilo
-    - Pagos por jornada
-    - Adelantos, bonos y deducciones
-    - Neto inmutable
+    Liquidación oficial de nómina de cosecha (F-14, F-15, F-16).
+    - Permite filtrar por rango de fechas (desde - hasta).
+    - Transparenta la tarifa por día (jornada) y tarifa por kg.
+    - Cuadrilla no es requerida (cálculo directo e individual por trabajador).
     """
     # Leer tarifas vigentes en base de datos si no se especifican en el query
     if tarifa_kg is None:
@@ -1562,17 +1963,27 @@ def get_nomina_liquidacion(
         tj_obj = db.query(Tarifa).filter(Tarifa.tipo == "JORNADA", Tarifa.activo == True).order_by(Tarifa.id.desc()).first()
         tarifa_jornada = tj_obj.valor_rd if tj_obj else 800.0
 
+    # Query base de pesajes con filtro de rango de fechas
+    q_regs = db.query(RegistroCosecha)
+    if fecha_desde:
+        q_regs = q_regs.filter(RegistroCosecha.fecha >= fecha_desde)
+    if fecha_hasta:
+        q_regs = q_regs.filter(RegistroCosecha.fecha <= fecha_hasta)
+    
+    todos_los_regs = q_regs.all()
+
     trabajadores = db.query(Trabajador).filter(Trabajador.activo == True).all()
     detalle = []
     tot_kg = 0.0
+    tot_dias = 0.0
     tot_neto = 0.0
     tot_bruto = 0.0
     tot_adelantos = 0.0
 
     for t in trabajadores:
-        regs = db.query(RegistroCosecha).filter(RegistroCosecha.trabajador_id == t.id).all()
-        kg = sum(r.kg_pesados for r in regs if r.modalidad == "KILO")
-        jornadas = sum(r.fraccion_jornada for r in regs if r.modalidad == "JORNADA")
+        regs_trab = [r for r in todos_los_regs if r.trabajador_id == t.id]
+        kg = sum(r.kg_pesados for r in regs_trab if r.modalidad == "KILO")
+        jornadas = sum(r.fraccion_jornada for r in regs_trab if r.modalidad == "JORNADA")
         
         bruto_kg = f14_pago_por_kilo(kg, tarifa_kg)
         bruto_j = f15_pago_por_jornada(jornadas, tarifa_jornada)
@@ -1584,13 +1995,14 @@ def get_nomina_liquidacion(
         bonos_trab = sum(a.monto_rd for a in ajustes_trab if a.tipo_ajuste == "BONO")
         deducc_trab = sum(a.monto_rd for a in ajustes_trab if a.tipo_ajuste == "DEDUCCION")
         
-        # Si no hay ajuste en tabla para Juan Pérez, usar el default histórico ilustrativo
-        if adelantos_trab == 0.0 and t.id == 1:
+        # Default histórico ilustrativo si aplica
+        if adelantos_trab == 0.0 and t.id == 1 and not fecha_desde:
             adelantos_trab = 100.0
 
         neto = f16_neto_semanal(bruto_tot, bonos=bonos_trab, deducciones=deducc_trab, adelantos=adelantos_trab)
 
         tot_kg += kg
+        tot_dias += jornadas
         tot_bruto += bruto_tot
         tot_adelantos += adelantos_trab
         tot_neto += neto
@@ -1598,12 +2010,12 @@ def get_nomina_liquidacion(
         detalle.append({
             "trabajador_id": t.id,
             "nombre": t.nombre_completo,
-            "cuadrilla": t.cuadrilla,
+            "cedula_id": t.cedula_id or "S/C",
             "kg_cosechados": round(kg, 1),
             "tarifa_kg": tarifa_kg,
             "subtotal_kg": bruto_kg,
-            "dias_jornada": jornadas,
-            "tarifa_jornada": tarifa_jornada,
+            "dias_jornada": round(jornadas, 2),
+            "tarifa_dia": tarifa_jornada,
             "subtotal_jornada": bruto_j,
             "bruto": bruto_tot,
             "adelantos": adelantos_trab,
@@ -1612,13 +2024,18 @@ def get_nomina_liquidacion(
             "neto_a_pagar": neto
         })
 
+    periodo_str = f"Del {fecha_desde} al {fecha_hasta}" if (fecha_desde and fecha_hasta) else "Campaña Cosecha Activa 2026"
+
     return {
-        "periodo": "Semana 45 - Noviembre 2026",
+        "periodo": periodo_str,
+        "fecha_desde": fecha_desde,
+        "fecha_hasta": fecha_hasta,
         "tarifas_aplicadas": {
             "tarifa_kilo_rd": tarifa_kg,
-            "tarifa_jornada_rd": tarifa_jornada
+            "tarifa_dia_rd": tarifa_jornada
         },
         "total_kg": round(tot_kg, 1),
+        "total_dias": round(tot_dias, 2),
         "total_bruto_rd": round(tot_bruto, 2),
         "total_adelantos_rd": round(tot_adelantos, 2),
         "total_nomina_rd": round(tot_neto, 2),
